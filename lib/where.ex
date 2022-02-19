@@ -14,7 +14,7 @@ defmodule Where do
   defp module_name(name) when is_atom(name), do: module_name(Atom.to_string(name))
   defp module_name(name) when is_binary(name), do: String.replace_prefix(name, "Elixir.", "")
 
-  @doc "IO.inspect with position information, an optional label and it configured not to truncate output."
+  @doc "IO.inspect with position information, an optional label and configured not to truncate output."
   defmacro dump(thing, label \\ "") do
     pre = debug_label(__CALLER__)
     quote do
@@ -28,6 +28,7 @@ defmodule Where do
     quote do
       require Logger
       Logger.debug("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thing), pretty: true, printable_limit: :infinity)}")
+      unquote(thing)
     end
   end
 
@@ -37,6 +38,7 @@ defmodule Where do
     quote do
       require Logger
       Logger.warn("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thing), pretty: true, printable_limit: :infinity)}")
+      unquote(thing)
     end
   end
 
@@ -46,6 +48,7 @@ defmodule Where do
     quote do
       require Logger
       Logger.error("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thing), pretty: true, printable_limit: :infinity)}")
+      unquote(thing)
     end
   end
 
@@ -110,5 +113,3 @@ defmodule Where do
   end
 
 end
-
-
