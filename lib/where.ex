@@ -17,38 +17,47 @@ defmodule Where do
   @doc "IO.inspect with position information, an optional label and configured not to truncate output."
   defmacro dump(thing, label \\ "") do
     pre = debug_label(__CALLER__)
+    thang = debug_label(__CALLER__)
     quote do
-      IO.inspect(unquote(thing), label: "#{unquote(pre)} #{unquote(label)}", pretty: true, printable_limit: :infinity)
+      unquote(thang) = unquote(thing)
+      IO.inspect(unquote(thang), label: "#{unquote(pre)} #{unquote(label)}", pretty: true, printable_limit: :infinity)
+      unquote(thang)
     end
   end
 
   @doc "Like `inspect`, but logging at debug level"
   defmacro debug(thing, label \\ "") do
     pre = debug_label(__CALLER__)
+    thang = debug_label(__CALLER__)
     quote do
       require Logger
-      Logger.debug("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thing), pretty: true, printable_limit: :infinity)}")
-      unquote(thing)
+      unquote(thang) = unquote(thing)
+      Logger.debug("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, printable_limit: :infinity)}")
+      unquote(thang)
     end
   end
 
   @doc "Like `inspect`, but logging at warn level"
   defmacro warn(thing, label \\ "") do
     pre = debug_label(__CALLER__)
+    thang = debug_label(__CALLER__)
     quote do
       require Logger
-      Logger.warn("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thing), pretty: true, printable_limit: :infinity)}")
-      unquote(thing)
+      unquote(thang) = unquote(thing)
+      Logger.warn("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, printable_limit: :infinity)}")
+      unquote(thang)
     end
   end
 
   @doc "Like `inspect`, but logging at error level"
   defmacro error(thing, label \\ "") do
     pre = debug_label(__CALLER__)
+    thang = debug_label(__CALLER__)
     quote do
       require Logger
-      Logger.error("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thing), pretty: true, printable_limit: :infinity)}")
-      unquote(thing)
+      unquote(thang) = unquote(thing)
+      Logger.error("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, printable_limit: :infinity)}")
+      unquote(thang)
     end
   end
 
@@ -100,7 +109,7 @@ defmodule Where do
       cond do
         !unquote(opts)[:debug] -> nil
         unquote(opts)[:verbose] ->
-          Logger.debug("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thing), pretty: true, printable_limit: :infinity)}")
+          Logger.debug("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, printable_limit: :infinity)}")
         is_list(unquote(thang)) ->
           Logger.debug("#{unquote(pre)} #{unquote(label)} (length): #{Enum.count(unquote(thang))}")
         is_map(unquote(thang)) and not is_struct(unquote(thang)) ->
