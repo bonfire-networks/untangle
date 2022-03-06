@@ -1,6 +1,6 @@
 # Where
 
-Logging and inspecting with location information
+`Where` provides logging and inspecting with location information
 
 ## Installation
 
