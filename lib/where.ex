@@ -25,7 +25,7 @@ defmodule Where do
     end
   end
 
-  @doc "Like `inspect`, but logging at debug level"
+  @doc "Like `dump`, but logging at debug level"
   defmacro debug(thing, label \\ "") do
     pre = debug_label(__CALLER__)
     thang = Macro.var(:thing, __MODULE__)
@@ -37,7 +37,7 @@ defmodule Where do
     end
   end
 
-  @doc "Like `inspect`, but logging at warn level"
+  @doc "Like `dump`, but logging at warn level"
   defmacro warn(thing, label \\ "") do
     pre = debug_label(__CALLER__)
     thang = Macro.var(:thing, __MODULE__)
@@ -49,7 +49,7 @@ defmodule Where do
     end
   end
 
-  @doc "Like `inspect`, but logging at error level"
+  @doc "Like `dump`, but logging at error level"
   defmacro error(thing, label \\ "") do
     pre = debug_label(__CALLER__)
     thang = Macro.var(:thing, __MODULE__)
@@ -112,6 +112,8 @@ defmodule Where do
           Logger.debug("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, printable_limit: :infinity)}")
         is_list(unquote(thang)) ->
           Logger.debug("#{unquote(pre)} #{unquote(label)} (length): #{Enum.count(unquote(thang))}")
+        is_struct(unquote(thang)) ->
+          Logger.debug("#{unquote(pre)} #{unquote(label)}: %#{unquote(thang).__struct__}{}")
         is_map(unquote(thang)) and not is_struct(unquote(thang)) ->
           Logger.debug("#{unquote(pre)} #{unquote(label)} (keys): #{inspect(Map.keys(unquote(thang)))}")
         true ->
