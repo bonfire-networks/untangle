@@ -20,7 +20,8 @@ defmodule Where do
     thang = Macro.var(:thing, __MODULE__)
     quote do
       unquote(thang) = unquote(thing)
-      IO.inspect(unquote(thang), label: "#{unquote(pre)} #{unquote(label)}", pretty: true, printable_limit: :infinity)
+      limit = :infinity
+      IO.inspect(unquote(thang), label: "#{unquote(pre)} #{unquote(label)}", pretty: true, limit: limit, printable_limit: limit)
       unquote(thang)
     end
   end
