@@ -38,6 +38,18 @@ defmodule Where do
     end
   end
 
+  @doc "Like `dump`, but logging at info level"
+  defmacro info(thing, label \\ "") do
+    pre = debug_label(__CALLER__)
+    thang = Macro.var(:thing, __MODULE__)
+    quote do
+      require Logger
+      unquote(thang) = unquote(thing)
+      Logger.info("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, printable_limit: :infinity)}")
+      unquote(thang)
+    end
+  end
+
   @doc "Like `dump`, but logging at warn level"
   defmacro warn(thing, label \\ "") do
     pre = debug_label(__CALLER__)
@@ -50,7 +62,7 @@ defmodule Where do
     end
   end
 
-  @doc "Like `dump`, but logging at error level"
+  @doc "Like `dump`, but logging at error level, and returns an error tuple"
   defmacro error(thing, label \\ "") do
     pre = debug_label(__CALLER__)
     thang = Macro.var(:thing, __MODULE__)
@@ -58,9 +70,13 @@ defmodule Where do
       require Logger
       unquote(thang) = unquote(thing)
       Logger.error("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, printable_limit: :infinity)}")
-      unquote(thang)
+      Where.return_error(unquote(label), unquote(thang))
     end
   end
+
+  def return_error(_label, {:error, _} = tuple), do: tuple
+  def return_error(label, _object) when is_binary(label) and label !="", do: {:error, label}
+  def return_error(_label, object), do: {:error, object}
 
   @doc "Like `debug`, but will do nothing unless the `:debug` option is truthy"
   defmacro debug?(thing, label \\ "", options) do
