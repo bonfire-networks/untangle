@@ -20,8 +20,7 @@ defmodule Where do
     thang = Macro.var(:thing, __MODULE__)
     quote do
       unquote(thang) = unquote(thing)
-      limit = :infinity
-      IO.inspect(unquote(thang), label: "#{unquote(pre)} #{unquote(label)}", pretty: true, limit: limit, printable_limit: limit)
+      IO.inspect(unquote(thang), label: "#{unquote(pre)} #{unquote(label)}", pretty: true, limit: 8000, printable_limit: 8000)
       unquote(thang)
     end
   end
@@ -33,7 +32,7 @@ defmodule Where do
     quote do
       require Logger
       unquote(thang) = unquote(thing)
-      Logger.debug("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, printable_limit: :infinity)}")
+      Logger.debug("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, limit: 8000, printable_limit: 8000)}")
       unquote(thang)
     end
   end
@@ -45,7 +44,7 @@ defmodule Where do
     quote do
       require Logger
       unquote(thang) = unquote(thing)
-      Logger.info("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, printable_limit: :infinity)}")
+      Logger.info("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, limit: 8000, printable_limit: 8000)}")
       unquote(thang)
     end
   end
@@ -57,7 +56,7 @@ defmodule Where do
     quote do
       require Logger
       unquote(thang) = unquote(thing)
-      Logger.warn("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, printable_limit: :infinity)}")
+      Logger.warn("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, limit: 8000, printable_limit: 8000)}")
       unquote(thang)
     end
   end
@@ -69,7 +68,7 @@ defmodule Where do
     quote do
       require Logger
       unquote(thang) = unquote(thing)
-      Logger.error("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, printable_limit: :infinity)}")
+      Logger.error("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, limit: 8000, printable_limit: 8000)}")
       Where.return_error(unquote(label), unquote(thang))
     end
   end
@@ -88,7 +87,7 @@ defmodule Where do
       unquote(opts) = unquote(options)
       unquote(thang) = unquote(thing)
       if unquote(opts)[:debug] do
-        Logger.debug("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, printable_limit: :infinity)}")
+        Logger.debug("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, limit: 8000, printable_limit: 8000)}")
       end
       unquote(thang)
     end
@@ -104,7 +103,7 @@ defmodule Where do
       unquote(opts) = unquote(options)
       unquote(thang) = unquote(thing)
       if unquote(opts)[:debug] && unquote(opts)[:verbose] do
-        Logger.debug("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, printable_limit: :infinity)}")
+        Logger.debug("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, limit: 8000, printable_limit: 8000)}")
       end
       unquote(thang)
     end
@@ -126,7 +125,7 @@ defmodule Where do
       cond do
         !unquote(opts)[:debug] -> nil
         unquote(opts)[:verbose] ->
-          Logger.debug("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, printable_limit: :infinity)}")
+          Logger.debug("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, limit: 8000, printable_limit: 8000)}")
         is_list(unquote(thang)) ->
           Logger.debug("#{unquote(pre)} #{unquote(label)} (length): #{Enum.count(unquote(thang))}")
         is_struct(unquote(thang)) ->
