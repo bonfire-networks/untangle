@@ -65,10 +65,12 @@ defmodule Where do
   defmacro error(thing, label \\ "") do
     pre = debug_label(__CALLER__)
     thang = Macro.var(:thing, __MODULE__)
+    # stacktrace = Exception.format_stacktrace(Macro.Env.stacktrace(__CALLER__))
     quote do
       require Logger
       unquote(thang) = unquote(thing)
       Logger.error("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, limit: 8000, printable_limit: 8000)}")
+      # Logger.info(unquote(stacktrace))
       Where.return_error(unquote(label), unquote(thang))
     end
   end
