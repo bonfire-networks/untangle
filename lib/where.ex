@@ -4,10 +4,12 @@ defmodule Where do
   """
 
   defp debug_label(caller) do
+    # app = Application.get_application(caller.module)
+    app = if function_exported?(Mix.Project, :config, 0), do: Mix.Project.config[:app]
     file = Path.relative_to_cwd(caller.file)
     case caller.function do
-      {fun, arity} -> "[#{file}:#{caller.line}@#{module_name(caller.module)}.#{fun}/#{arity}]"
-      _ -> "[#{file}:#{caller.line}]"
+      {fun, arity} -> "[#{app}/#{file}:#{caller.line}@#{module_name(caller.module)}.#{fun}/#{arity}]"
+      _ -> "[#{app}/#{file}:#{caller.line}]"
     end
   end
 
