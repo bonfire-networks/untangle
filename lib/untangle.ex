@@ -52,19 +52,19 @@ defmodule Untangle do
   - an error tuple with the passed value otherwise
 
   iex> error(:value)
-  # [error] :value
+  ### [error] :value
   {:error, :value}
 
   iex> error({:error, :value})
-  # [error] :value
+  ### [error] :value
   {:error, :value}
 
   iex> error(:value, "with label")
-  # [error] with label: :value
+  ### [error] with label: :value
   {:error, "with label"}
 
   iex> error({:error, :value}, "with label")
-  # [error] with label: :value
+  ### [error] with label: :value
   {:error, "with label"}
 
   """
@@ -205,7 +205,7 @@ defmodule Untangle do
 
   # Made public to be called from Macro.dbg/3, so that we generate as little code
   # as possible and call out into a function as soon as we can.
-  # copied from `Macro.dbg/2`
+  # Copied from `Macro.dbg/2`
   @doc false
   def __dbg__(header_string, to_debug, options \\ []) do
 
@@ -216,6 +216,7 @@ defmodule Untangle do
     result
   end
 
+  @doc false
   def __prepare_dbg__(header_string, to_debug, options \\ []) do
     {print_location?, options} = Keyword.pop(options, :print_location, true)
     options = Keyword.merge([width: 80, pretty: true, syntax_colors: syntax_colors], options)
@@ -293,9 +294,11 @@ defmodule Untangle do
   defp module_name(name) when is_atom(name), do: module_name(Atom.to_string(name))
   defp module_name(name) when is_binary(name), do: String.replace_prefix(name, "Elixir.", "")
 
+  @doc false
   def __naked_error__({:error, e}), do: e
   def __naked_error__(object), do: object
 
+  @doc false
   def __return_error__(_label, {:error, _} = tuple), do: tuple
   def __return_error__(label, object) when is_binary(label) and label !="", do: {:error, label}
   def __return_error__(_label, object), do: {:error, object}

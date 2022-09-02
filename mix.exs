@@ -12,7 +12,7 @@ defmodule Untangle.MixProject do
       source_url: "https://github.com/bonfire-networks/untangle",
       package: [
         licenses: ["Apache-2.0"],
-        organization: "bonfire",
+        # organization: "bonfire",
         links: %{
           "Repository" => "https://github.com/bonfire-networks/untangle",
           "Hexdocs" => "https://hexdocs.pm/untangle",
