@@ -15,17 +15,18 @@ defmodule Untangle.MixProject do
         # organization: "bonfire",
         links: %{
           "Repository" => "https://github.com/bonfire-networks/untangle",
-          "Hexdocs" => "https://hexdocs.pm/untangle",
-        },
+          "Hexdocs" => "https://hexdocs.pm/untangle"
+        }
       ],
       docs: [
-        main: "readme", # The first page to display from the docs
-        extras: ["README.md"], # extra pages to include
+        # The first page to display from the docs
+        main: "readme",
+        # extra pages to include
+        extras: ["README.md"]
       ],
-      deps: [{:ex_doc, ">= 0.0.0", only: :dev, runtime: false}],
+      deps: [{:ex_doc, ">= 0.0.0", only: :dev, runtime: false}]
     ]
   end
 
   def application, do: [extra_applications: [:logger]]
-
 end

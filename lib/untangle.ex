@@ -6,17 +6,31 @@ defmodule Untangle do
   @doc "IO.inspect with position information, an optional label and configured not to truncate output too much."
   defmacro dump(thing, label \\ "") do
     pre = format_label(__CALLER__)
+
     quote do
-      unquote(__MODULE__).__dbg__("#{unquote(pre)} #{unquote(label)}", unquote(thing))
+      unquote(__MODULE__).__dbg__(
+        "#{unquote(pre)} #{unquote(label)}",
+        unquote(thing)
+      )
     end
   end
 
   @doc "Like `dump`, but for logging at debug level"
   defmacro debug(thing, label \\ "") do
     pre = format_label(__CALLER__)
+
     quote do
       require Logger
-      {formatted, result} = unquote(__MODULE__).__prepare_dbg__("#{unquote(pre)} #{unquote(label)}", unquote(thing), pretty: true, limit: 10000, printable_limit: 10000)
+
+      {formatted, result} =
+        unquote(__MODULE__).__prepare_dbg__(
+          "#{unquote(pre)} #{unquote(label)}",
+          unquote(thing),
+          pretty: true,
+          limit: 10000,
+          printable_limit: 10000
+        )
+
       Logger.debug(formatted)
       result
     end
@@ -26,9 +40,19 @@ defmodule Untangle do
   defmacro info(thing, label \\ "") do
     pre = format_label(__CALLER__)
     thang = Macro.var(:thing, __MODULE__)
+
     quote do
       require Logger
-      {formatted, result} = unquote(__MODULE__).__prepare_dbg__("#{unquote(pre)} #{unquote(label)}", unquote(thing), pretty: true, limit: 10000, printable_limit: 10000)
+
+      {formatted, result} =
+        unquote(__MODULE__).__prepare_dbg__(
+          "#{unquote(pre)} #{unquote(label)}",
+          unquote(thing),
+          pretty: true,
+          limit: 10000,
+          printable_limit: 10000
+        )
+
       Logger.info(formatted)
       result
     end
@@ -38,9 +62,19 @@ defmodule Untangle do
   defmacro warn(thing, label \\ "") do
     pre = format_label(__CALLER__)
     thang = Macro.var(:thing, __MODULE__)
+
     quote do
       require Logger
-      {formatted, result} = unquote(__MODULE__).__prepare_dbg__("#{unquote(pre)} #{unquote(label)}", unquote(thing), pretty: true, limit: 10000, printable_limit: 10000)
+
+      {formatted, result} =
+        unquote(__MODULE__).__prepare_dbg__(
+          "#{unquote(pre)} #{unquote(label)}",
+          unquote(thing),
+          pretty: true,
+          limit: 10000,
+          printable_limit: 10000
+        )
+
       Logger.warn(formatted)
       result
     end
@@ -71,9 +105,19 @@ defmodule Untangle do
   defmacro error(thing, label \\ "") do
     pre = format_label(__CALLER__)
     stacktrace = Exception.format_stacktrace(Macro.Env.stacktrace(__CALLER__))
+
     quote do
       require Logger
-      {formatted, result} = unquote(__MODULE__).__prepare_dbg__("#{unquote(pre)} #{unquote(label)}", Untangle.__naked_error__(unquote(thing)), pretty: true, limit: 10000, printable_limit: 10000)
+
+      {formatted, result} =
+        unquote(__MODULE__).__prepare_dbg__(
+          "#{unquote(pre)} #{unquote(label)}",
+          Untangle.__naked_error__(unquote(thing)),
+          pretty: true,
+          limit: 10000,
+          printable_limit: 10000
+        )
+
       Logger.error(formatted)
       Logger.info(unquote(stacktrace))
       Untangle.__return_error__(unquote(label), result)
@@ -83,8 +127,10 @@ defmodule Untangle do
   @doc "Like `debug`, but will do nothing unless the `:debug` option is truthy"
   defmacro maybe_dbg(thing, label \\ "", options) do
     opts = Macro.var(:opts, __MODULE__)
+
     quote do
       unquote(opts) = unquote(options)
+
       if unquote(opts)[:debug] do
         debug(unquote(thing), unquote(label))
       else
@@ -96,8 +142,10 @@ defmodule Untangle do
   @doc "Like `maybe_dbg`, but requires the `:verbose` option to be set. Intended for large outputs."
   defmacro maybe_info(thing, label \\ "", options) do
     opts = Macro.var(:opts, __MODULE__)
+
     quote do
       unquote(opts) = unquote(options)
+
       if unquote(opts)[:verbose] do
         info(unquote(thing), unquote(label))
       else
@@ -115,27 +163,43 @@ defmodule Untangle do
     pre = format_label(__CALLER__)
     opts = Macro.var(:opts, __MODULE__)
     thang = Macro.var(:thing, __MODULE__)
+
     quote do
       require Logger
       unquote(opts) = unquote(options)
       unquote(thang) = unquote(thing)
+
       cond do
-        !unquote(opts)[:debug] -> nil
+        !unquote(opts)[:debug] ->
+          nil
+
         unquote(opts)[:verbose] ->
-          Logger.debug("#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, limit: 10000, printable_limit: 10000)}")
+          Logger.debug(
+            "#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, limit: 10000, printable_limit: 10000)}"
+          )
+
         is_list(unquote(thang)) ->
-          Logger.debug("#{unquote(pre)} #{unquote(label)} (length): #{Enum.count(unquote(thang))}")
+          Logger.debug(
+            "#{unquote(pre)} #{unquote(label)} (length): #{Enum.count(unquote(thang))}"
+          )
+
         is_struct(unquote(thang)) ->
           Logger.debug("#{unquote(pre)} #{unquote(label)}: %#{unquote(thang).__struct__}{}")
+
         is_map(unquote(thang)) and not is_struct(unquote(thang)) ->
-          Logger.debug("#{unquote(pre)} #{unquote(label)} (keys): #{inspect(Map.keys(unquote(thang)))}")
+          Logger.debug(
+            "#{unquote(pre)} #{unquote(label)} (keys): #{inspect(Map.keys(unquote(thang)))}"
+          )
+
         true ->
-          Logger.debug("#{unquote(pre)} #{unquote(label)} (inspect elided, pass `:verbose` to see)")
+          Logger.debug(
+            "#{unquote(pre)} #{unquote(label)} (inspect elided, pass `:verbose` to see)"
+          )
       end
+
       unquote(thang)
     end
   end
-
 
   @doc """
   Custom backend for `Kernel.dbg/2`.
@@ -149,7 +213,11 @@ defmodule Untangle do
     header = "#{format_label(env)} #{options[:label]}:"
 
     quote do
-      unquote(__MODULE__).__dbg__(unquote(header), unquote(dbg_ast_to_debuggable(code)), unquote(options))
+      unquote(__MODULE__).__dbg__(
+        unquote(header),
+        unquote(dbg_ast_to_debuggable(code)),
+        unquote(options)
+      )
     end
   end
 
@@ -168,6 +236,7 @@ defmodule Untangle do
     values_acc_var = Macro.unique_var(:values, __MODULE__)
 
     [start_ast | rest_asts] = asts = for {ast, 0} <- Macro.unpipe(pipe_ast), do: ast
+
     rest_asts = Enum.map(rest_asts, &Macro.pipe(value_var, &1, 0))
 
     string_asts = Enum.map(asts, &to_string/1)
@@ -184,7 +253,10 @@ defmodule Untangle do
           quote do
             unquote(ast_acc)
             unquote(value_var) = unquote(step_ast)
-            unquote(values_acc_var) = [unquote(value_var) | unquote(values_acc_var)]
+
+            unquote(values_acc_var) = [
+              unquote(value_var) | unquote(values_acc_var)
+            ]
           end
       end
 
@@ -208,7 +280,6 @@ defmodule Untangle do
   # Copied from `Macro.dbg/2`
   @doc false
   def __dbg__(header_string, to_debug, options \\ []) do
-
     {formatted, result} = __prepare_dbg__(header_string, to_debug, options)
 
     IO.write(formatted)
@@ -219,7 +290,12 @@ defmodule Untangle do
   @doc false
   def __prepare_dbg__(header_string, to_debug, options \\ []) do
     {print_location?, options} = Keyword.pop(options, :print_location, true)
-    options = Keyword.merge([width: 80, pretty: true, syntax_colors: syntax_colors], options)
+
+    options =
+      Keyword.merge(
+        [width: 80, pretty: true, syntax_colors: syntax_colors],
+        options
+      )
 
     {formatted, result} = dbg_format_ast_to_debug(to_debug, options)
 
@@ -240,11 +316,24 @@ defmodule Untangle do
     result = List.last(values)
     [{first_ast, first_value} | asts_with_values] = Enum.zip(code_asts, values)
 
-    first_formatted = [dbg_format_ast(first_ast), " ", inspect(first_value, options), ?\n]
+    first_formatted = [
+      dbg_format_ast(first_ast),
+      " ",
+      inspect(first_value, options),
+      ?\n
+    ]
 
     rest_formatted =
       Enum.map(asts_with_values, fn {code_ast, value} ->
-        [:faint, "|> ", :reset, dbg_format_ast(code_ast), " ", inspect(value, options), ?\n]
+        [
+          :faint,
+          "|> ",
+          :reset,
+          dbg_format_ast(code_ast),
+          " ",
+          inspect(value, options),
+          ?\n
+        ]
       end)
 
     {[first_formatted | rest_formatted], result}
@@ -264,35 +353,47 @@ defmodule Untangle do
 
   defp syntax_colors do
     if IO.ANSI.enabled?() do
-      if function_exported?(IO.ANSI, :syntax_colors, 0), do: IO.ANSI.syntax_colors(),
-        else: [ # polyfill for pre-1.14 elixir
-        {:atom, :cyan},
-        {:binary, :default_color},
-        {:boolean, :magenta},
-        {:charlist, :yellow},
-        {:list, :default_color},
-        {:map, :default_color},
-        {nil, :magenta},
-        {:number, :yellow},
-        {:string, :green},
-        {:tuple, :default_color}
-      ]
+      if function_exported?(IO.ANSI, :syntax_colors, 0),
+        do: IO.ANSI.syntax_colors(),
+        # polyfill for pre-1.14 elixir
+        else: [
+          {:atom, :cyan},
+          {:binary, :default_color},
+          {:boolean, :magenta},
+          {:charlist, :yellow},
+          {:list, :default_color},
+          {:map, :default_color},
+          {nil, :magenta},
+          {:number, :yellow},
+          {:string, :green},
+          {:tuple, :default_color}
+        ]
     else
       []
     end
   end
 
   defp format_label(caller) do
-    app = if function_exported?(Mix.Project, :config, 0), do: Mix.Project.config[:app]
+    app =
+      if function_exported?(Mix.Project, :config, 0),
+        do: Mix.Project.config()[:app]
+
     file = Path.relative_to_cwd(caller.file)
+
     case caller.function do
-      {fun, arity} -> "[#{app}/#{file}:#{caller.line}@#{module_name(caller.module)}.#{fun}/#{arity}]"
-      _ -> "[#{app}/#{file}:#{caller.line}]"
+      {fun, arity} ->
+        "[#{app}/#{file}:#{caller.line}@#{module_name(caller.module)}.#{fun}/#{arity}]"
+
+      _ ->
+        "[#{app}/#{file}:#{caller.line}]"
     end
   end
 
-  defp module_name(name) when is_atom(name), do: module_name(Atom.to_string(name))
-  defp module_name(name) when is_binary(name), do: String.replace_prefix(name, "Elixir.", "")
+  defp module_name(name) when is_atom(name),
+    do: module_name(Atom.to_string(name))
+
+  defp module_name(name) when is_binary(name),
+    do: String.replace_prefix(name, "Elixir.", "")
 
   @doc false
   def __naked_error__({:error, e}), do: e
@@ -300,7 +401,9 @@ defmodule Untangle do
 
   @doc false
   def __return_error__(_label, {:error, _} = tuple), do: tuple
-  def __return_error__(label, object) when is_binary(label) and label !="", do: {:error, label}
-  def __return_error__(_label, object), do: {:error, object}
 
+  def __return_error__(label, object) when is_binary(label) and label != "",
+    do: {:error, label}
+
+  def __return_error__(_label, object), do: {:error, object}
 end
