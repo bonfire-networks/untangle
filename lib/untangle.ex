@@ -3,15 +3,29 @@ defmodule Untangle do
   Logging and debug printing that include location information
   """
 
-  @doc "IO.inspect with position information, an optional label and configured not to truncate output too much."
+  @doc "IO.inspect but outputs to Logger with position information, an optional label and configured not to truncate output too much."
   defmacro dump(thing, label \\ "") do
     pre = format_label(__CALLER__)
 
     quote do
-      unquote(__MODULE__).__dbg__(
-        "#{unquote(pre)} #{unquote(label)}",
-        unquote(thing)
-      )
+      # unquote(__MODULE__).__dbg__(
+      #   "#{unquote(pre)} #{unquote(label)}",
+      #   unquote(thing)
+      # )
+
+      require Logger
+
+      {formatted, result} =
+        unquote(__MODULE__).__prepare_dbg__(
+          "#{unquote(pre)} #{unquote(label)}",
+          unquote(thing),
+          pretty: true,
+          limit: :infinity,
+          printable_limit: :infinity
+        )
+
+      Logger.info(formatted)
+      result
     end
   end
 
@@ -39,7 +53,7 @@ defmodule Untangle do
   @doc "Like `dump`, but for logging at info level"
   defmacro info(thing, label \\ "") do
     pre = format_label(__CALLER__)
-    thang = Macro.var(:thing, __MODULE__)
+    # thang = Macro.var(:thing, __MODULE__)
 
     quote do
       require Logger
@@ -61,7 +75,7 @@ defmodule Untangle do
   @doc "Like `dump`, but for logging at warn level"
   defmacro warn(thing, label \\ "") do
     pre = format_label(__CALLER__)
-    thang = Macro.var(:thing, __MODULE__)
+    # thang = Macro.var(:thing, __MODULE__)
 
     quote do
       require Logger
