@@ -10,10 +10,10 @@ defmodule Untangle.Time do
       result = unquote(fn_body)
       finish = :erlang.monotonic_time()
 
-      time = :erlang.convert_time_unit(finish - start, :native, :millisecond)
+      time = :erlang.convert_time_unit(finish - start, :native, :microsecond)
 
       Logger.info(
-        "Time to run #{unquote(context.module)}.#{unquote(context.name)}/#{unquote(context.arity)}: #{time} ms"
+        "Time to run #{unquote(context.module)}.#{unquote(context.name)}/#{unquote(context.arity)}: #{time / 1_000} ms"
       )
 
       result
