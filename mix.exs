@@ -24,7 +24,10 @@ defmodule Untangle.MixProject do
         # extra pages to include
         extras: ["README.md"]
       ],
-      deps: [{:ex_doc, ">= 0.0.0", only: :dev, runtime: false}]
+      deps: [
+        {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+        {:decorator, "~> 1.4"}
+      ]
     ]
   end
 

@@ -1,7 +1,8 @@
 # Untangle
 
-Logging and inspecting with code location information.
+Logging/inspecting data, and timing functions, with code location information.
 
+## Logging/inspecting
 `Untangle` provides alternatives for `IO.inspect` and the macros in Elixir's `Logger` to output code location information. It also provides a polyfill for `dbg` which was introduce in Elixir 1.14
 
 The first argument is `inspect`ed and the second argument (if provided) is used as a label:
@@ -32,6 +33,17 @@ do_something()
 
 When you are done debugging something, the location of the debug statement is already in the output so you know where to remove it, comment it out, or simply change `warn` or `info` for `debug` if you only need it during development :-)
 
+## Timing functions
+You can decorate functions to measure and log their execution time:
+
+```
+use Untangle
+
+@decorate time()
+def fun(), do: :stuff
+```
+
+will output something like `[info] Time to run MyModule.fun/0: 1 ms`
 
 ## Installation
 

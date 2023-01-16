@@ -3,6 +3,14 @@ defmodule Untangle do
   Logging and debug printing that include location information
   """
 
+  defmacro __using__(_) do
+    quote do
+      import Untangle
+      require Logger
+      use Untangle.Time
+    end
+  end
+
   @doc "IO.inspect but outputs to Logger with position information, an optional label and configured not to truncate output too much."
   defmacro dump(thing, label \\ "") do
     pre = format_label(__CALLER__)
