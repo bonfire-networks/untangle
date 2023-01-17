@@ -42,19 +42,23 @@ defmodule Untangle do
     pre = format_label(__CALLER__)
 
     quote do
-      require Logger
+      if Untangle.log_level?(:info) do
+        require Logger
 
-      {formatted, result} =
-        unquote(__MODULE__).__prepare_dbg__(
-          "#{unquote(pre)} #{unquote(label)}",
-          unquote(thing),
-          pretty: true,
-          limit: 10000,
-          printable_limit: 10000
-        )
+        {formatted, result} =
+          unquote(__MODULE__).__prepare_dbg__(
+            "#{unquote(pre)} #{unquote(label)}",
+            unquote(thing),
+            pretty: true,
+            limit: 10000,
+            printable_limit: 10000
+          )
 
-      Logger.debug(formatted)
-      result
+        Logger.debug(formatted)
+        result
+      else
+        unquote(thing)
+      end
     end
   end
 
@@ -64,19 +68,23 @@ defmodule Untangle do
     # thang = Macro.var(:thing, __MODULE__)
 
     quote do
-      require Logger
+      if Untangle.log_level?(:info) do
+        require Logger
 
-      {formatted, result} =
-        unquote(__MODULE__).__prepare_dbg__(
-          "#{unquote(pre)} #{unquote(label)}",
-          unquote(thing),
-          pretty: true,
-          limit: 10000,
-          printable_limit: 10000
-        )
+        {formatted, result} =
+          unquote(__MODULE__).__prepare_dbg__(
+            "#{unquote(pre)} #{unquote(label)}",
+            unquote(thing),
+            pretty: true,
+            limit: 10000,
+            printable_limit: 10000
+          )
 
-      Logger.info(formatted)
-      result
+        Logger.info(formatted)
+        result
+      else
+        unquote(thing)
+      end
     end
   end
 
@@ -86,19 +94,23 @@ defmodule Untangle do
     # thang = Macro.var(:thing, __MODULE__)
 
     quote do
-      require Logger
+      if Untangle.log_level?(:warning) do
+        require Logger
 
-      {formatted, result} =
-        unquote(__MODULE__).__prepare_dbg__(
-          "#{unquote(pre)} #{unquote(label)}",
-          unquote(thing),
-          pretty: true,
-          limit: 10000,
-          printable_limit: 10000
-        )
+        {formatted, result} =
+          unquote(__MODULE__).__prepare_dbg__(
+            "#{unquote(pre)} #{unquote(label)}",
+            unquote(thing),
+            pretty: true,
+            limit: 10000,
+            printable_limit: 10000
+          )
 
-      Logger.warn(formatted)
-      result
+        Logger.warn(formatted)
+        result
+      else
+        unquote(thing)
+      end
     end
   end
 
@@ -129,20 +141,37 @@ defmodule Untangle do
     stacktrace = Exception.format_stacktrace(Macro.Env.stacktrace(__CALLER__))
 
     quote do
-      require Logger
+      if Untangle.log_level?(:error) do
+        require Logger
 
-      {formatted, result} =
-        unquote(__MODULE__).__prepare_dbg__(
-          "#{unquote(pre)} #{unquote(label)}",
-          Untangle.__naked_error__(unquote(thing)),
-          pretty: true,
-          limit: 10000,
-          printable_limit: 10000
-        )
+        {formatted, result} =
+          unquote(__MODULE__).__prepare_dbg__(
+            "#{unquote(pre)} #{unquote(label)}",
+            Untangle.__naked_error__(unquote(thing)),
+            pretty: true,
+            limit: 10000,
+            printable_limit: 10000
+          )
 
-      Logger.error(formatted)
-      Logger.info(unquote(stacktrace))
-      Untangle.__return_error__(unquote(label), result)
+        Logger.error(formatted)
+        Logger.info(unquote(stacktrace))
+        Untangle.__return_error__(unquote(label), result)
+      else
+        Untangle.__return_error__(unquote(label), unquote(thing))
+      end
+    end
+  end
+
+  def log_level?(level) do
+    min_level =
+      if env_level = Application.get_env(:logger, :level) do
+        env_level
+      else
+        :debug
+      end
+
+    if Logger.compare_levels(level, min_level) != :lt do
+      true
     end
   end
 

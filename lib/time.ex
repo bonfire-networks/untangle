@@ -6,17 +6,21 @@ defmodule Untangle.Time do
 
   def time(fn_body, context) do
     quote do
-      start = :erlang.monotonic_time()
-      result = unquote(fn_body)
-      finish = :erlang.monotonic_time()
+      if Untangle.log_level?(:debug) do
+        start = :erlang.monotonic_time()
+        result = unquote(fn_body)
+        finish = :erlang.monotonic_time()
 
-      time = :erlang.convert_time_unit(finish - start, :native, :microsecond)
+        time = :erlang.convert_time_unit(finish - start, :native, :microsecond)
 
-      Logger.info(
-        "Time to run #{unquote(context.module)}.#{unquote(context.name)}/#{unquote(context.arity)}: #{time / 1_000} ms"
-      )
+        Logger.debug(
+          "Time to run #{unquote(context.module)}.#{unquote(context.name)}/#{unquote(context.arity)}: #{time / 1_000} ms"
+        )
 
-      result
+        result
+      else
+        unquote(fn_body)
+      end
     end
   end
 end
