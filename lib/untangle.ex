@@ -352,7 +352,7 @@ defmodule Untangle do
 
     formatted =
       if print_location? do
-        [:cyan, :italic, header_string, :reset, "\n", formatted]
+        [:cyan, :italic, header_string, :reset, ": ", formatted]
       else
         [formatted]
       end
