@@ -344,7 +344,7 @@ defmodule Untangle do
 
     options =
       Keyword.merge(
-        [width: 80, pretty: true, syntax_colors: syntax_colors],
+        [width: 80, pretty: true, syntax_colors: syntax_colors()],
         options
       )
 
