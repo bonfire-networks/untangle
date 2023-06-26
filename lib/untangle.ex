@@ -106,7 +106,7 @@ defmodule Untangle do
             printable_limit: 10000
           )
 
-        Logger.warn(formatted)
+        Logger.warning(formatted)
         result
       else
         unquote(thing)
