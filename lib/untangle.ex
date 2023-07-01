@@ -453,7 +453,7 @@ defmodule Untangle do
   @doc false
   def __return_error__(_label, {:error, _} = tuple), do: tuple
 
-  def __return_error__(label, object) when is_binary(label) and label != "",
+  def __return_error__(label, _object) when is_binary(label) and label != "",
     do: {:error, label}
 
   def __return_error__(_label, object), do: {:error, object}
