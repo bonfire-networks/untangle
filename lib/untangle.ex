@@ -71,10 +71,13 @@ defmodule Untangle do
       if Untangle.log_level?(:info) do
         require Logger
 
+        # {:current_stacktrace, stacktrace} = :erlang.process_info(self(), :current_stacktrace)
+
         {formatted, result} =
           unquote(__MODULE__).__prepare_dbg__(
             "#{unquote(pre)} #{unquote(label)}",
             unquote(thing),
+            # stacktrace: Untangle.format_stacktrace_sliced(stacktrace, 1, 2),
             pretty: true,
             limit: 10000,
             printable_limit: 10000
@@ -90,17 +93,20 @@ defmodule Untangle do
 
   @doc "Like `dump`, but for logging at warn level"
   defmacro warn(thing, label \\ "") do
-    pre = format_label(__CALLER__)
+    # pre = format_label(__CALLER__)
     # thang = Macro.var(:thing, __MODULE__)
 
     quote do
       if Untangle.log_level?(:warning) do
         require Logger
 
+        {:current_stacktrace, stacktrace} = :erlang.process_info(self(), :current_stacktrace)
+
         {formatted, result} =
           unquote(__MODULE__).__prepare_dbg__(
-            "#{unquote(pre)} #{unquote(label)}",
+            "#{unquote(label)}",
             unquote(thing),
+            stacktrace: Untangle.format_stacktrace_sliced(stacktrace, 1, 5),
             pretty: true,
             limit: 10000,
             printable_limit: 10000
@@ -137,24 +143,26 @@ defmodule Untangle do
 
   """
   defmacro error(thing, label \\ "") do
-    pre = format_label(__CALLER__)
-    stacktrace = Exception.format_stacktrace(Macro.Env.stacktrace(__CALLER__))
+    # pre = format_label(__CALLER__)
+    # stacktrace = Macro.Env.stacktrace(__CALLER__) 
 
     quote do
       if Untangle.log_level?(:error) do
         require Logger
 
+        {:current_stacktrace, stacktrace} = :erlang.process_info(self(), :current_stacktrace)
+
         {formatted, result} =
           unquote(__MODULE__).__prepare_dbg__(
-            "#{unquote(pre)} #{unquote(label)}",
+            "#{unquote(label)}",
             Untangle.__naked_error__(unquote(thing)),
+            stacktrace: Untangle.format_stacktrace_sliced(stacktrace, 1, 8),
             pretty: true,
             limit: 10000,
             printable_limit: 10000
           )
 
         Logger.error(formatted)
-        Logger.info(unquote(stacktrace))
         Untangle.__return_error__(unquote(label), result)
       else
         Untangle.__return_error__(unquote(label), unquote(thing))
@@ -351,10 +359,15 @@ defmodule Untangle do
     {formatted, result} = dbg_format_ast_to_debug(to_debug, options)
 
     formatted =
-      if print_location? do
-        [:cyan, :italic, header_string, :reset, ": ", formatted]
-      else
-        [formatted]
+      cond do
+        print_location? && options[:stacktrace] ->
+          [:italic, header_string, :reset, ": ", formatted, :default_color, options[:stacktrace]]
+
+        print_location? ->
+          [:italic, header_string, :reset, ": ", formatted]
+
+        true ->
+          [formatted]
       end
 
     ansi_enabled? = options[:syntax_colors] != []
@@ -439,6 +452,16 @@ defmodule Untangle do
         "[#{app}/#{file}:#{caller.line}]"
     end
   end
+
+  def format_stacktrace_sliced(stacktrace, starts \\ 1, ends \\ 5)
+
+  def format_stacktrace_sliced(stacktrace, starts, ends) when is_list(stacktrace) do
+    stacktrace
+    |> Enum.slice(starts, ends)
+    |> Exception.format_stacktrace()
+  end
+
+  def format_stacktrace_sliced(_stacktrace, _, _), do: nil
 
   defp module_name(name) when is_atom(name),
     do: module_name(Atom.to_string(name))
