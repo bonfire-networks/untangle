@@ -106,7 +106,7 @@ defmodule Untangle do
           unquote(__MODULE__).__prepare_dbg__(
             "#{unquote(label)}",
             unquote(thing),
-            stacktrace: Untangle.format_stacktrace_sliced(stacktrace, 1, 5),
+            stacktrace: Untangle.format_stacktrace_sliced(stacktrace, 0, 5),
             pretty: true,
             limit: 10000,
             printable_limit: 10000
@@ -156,7 +156,7 @@ defmodule Untangle do
           unquote(__MODULE__).__prepare_dbg__(
             "#{unquote(label)}",
             Untangle.__naked_error__(unquote(thing)),
-            stacktrace: Untangle.format_stacktrace_sliced(stacktrace, 1, 8),
+            stacktrace: Untangle.format_stacktrace_sliced(stacktrace, 0, 8),
             pretty: true,
             limit: 10000,
             printable_limit: 10000
