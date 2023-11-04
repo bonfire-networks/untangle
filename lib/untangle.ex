@@ -407,6 +407,10 @@ defmodule Untangle do
     {[dbg_format_ast(code_ast), " ", inspect(value, options), ?\n], value}
   end
 
+  defp dbg_format_ast_to_debug(value, options) when is_binary(value) do
+    {[value, ?\n], value}
+  end
+
   defp dbg_format_ast_to_debug(value, options) do
     {[inspect(value, options), ?\n], value}
   end
