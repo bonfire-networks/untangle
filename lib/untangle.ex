@@ -42,7 +42,7 @@ defmodule Untangle do
     pre = format_label(__CALLER__)
 
     quote do
-      if Untangle.log_level?(:info) do
+      if Untangle.log_level?(:debug) do
         require Logger
 
         {formatted, result} =
