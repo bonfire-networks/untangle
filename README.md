@@ -53,7 +53,7 @@ by adding `untangle` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:untangle, "~> 0.1.0"}
+    {:untangle, "~> 0.3"}
   ]
 end
 ```
