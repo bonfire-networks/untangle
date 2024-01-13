@@ -77,7 +77,7 @@ defmodule Untangle do
           unquote(__MODULE__).__prepare_dbg__(
             "#{unquote(pre)} #{unquote(label)}",
             unquote(thing),
-            # stacktrace: Untangle.format_stacktrace_sliced(stacktrace, 1, 2),
+            # stacktrace: Untangle.format_stacktrace_sliced(stacktrace, opts[:trace_skip] || 1, opts[:trace_limit] || 2),
             pretty: true,
             limit: 10000,
             printable_limit: 10000
@@ -92,7 +92,7 @@ defmodule Untangle do
   end
 
   @doc "Like `dump`, but for logging at warn level"
-  defmacro warn(thing, label \\ "") do
+  defmacro warn(thing, label \\ "", opts \\ []) do
     # pre = format_label(__CALLER__)
     # thang = Macro.var(:thing, __MODULE__)
 
@@ -102,11 +102,18 @@ defmodule Untangle do
 
         {:current_stacktrace, stacktrace} = :erlang.process_info(self(), :current_stacktrace)
 
+        opts = unquote(opts)
+
         {formatted, result} =
           unquote(__MODULE__).__prepare_dbg__(
             "#{unquote(label)}",
             unquote(thing),
-            stacktrace: Untangle.format_stacktrace_sliced(stacktrace, 0, 5),
+            stacktrace:
+              Untangle.format_stacktrace_sliced(
+                stacktrace,
+                opts[:trace_skip] || 0,
+                opts[:trace_limit] || 5
+              ),
             pretty: true,
             limit: 10000,
             printable_limit: 10000
@@ -142,7 +149,7 @@ defmodule Untangle do
   {:error, "with label"}
 
   """
-  defmacro error(thing, label \\ "") do
+  defmacro error(thing, label \\ "", opts \\ []) do
     # pre = format_label(__CALLER__)
     # stacktrace = Macro.Env.stacktrace(__CALLER__) 
 
@@ -152,11 +159,18 @@ defmodule Untangle do
 
         {:current_stacktrace, stacktrace} = :erlang.process_info(self(), :current_stacktrace)
 
+        opts = unquote(opts)
+
         {formatted, result} =
           unquote(__MODULE__).__prepare_dbg__(
             "#{unquote(label)}",
             Untangle.__naked_error__(unquote(thing)),
-            stacktrace: Untangle.format_stacktrace_sliced(stacktrace, 0, 8),
+            stacktrace:
+              Untangle.format_stacktrace_sliced(
+                stacktrace,
+                opts[:trace_skip] || 0,
+                opts[:trace_limit] || 8
+              ),
             pretty: true,
             limit: 10000,
             printable_limit: 10000
@@ -457,11 +471,11 @@ defmodule Untangle do
     end
   end
 
-  def format_stacktrace_sliced(stacktrace, starts \\ 1, ends \\ 5)
+  def format_stacktrace_sliced(stacktrace, starts \\ 1, amount \\ 5)
 
-  def format_stacktrace_sliced(stacktrace, starts, ends) when is_list(stacktrace) do
+  def format_stacktrace_sliced(stacktrace, starts, amount) when is_list(stacktrace) do
     stacktrace
-    |> Enum.slice(starts, ends)
+    |> Enum.slice(starts, amount)
     |> Exception.format_stacktrace()
   end
 
