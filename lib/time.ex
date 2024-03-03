@@ -2,11 +2,10 @@ defmodule Untangle.Time do
   use Decorator.Define, time: 0
   require Logger
 
-  # skip the measuring depending on env
-
   def time(fn_body, context) do
     quote do
       if Untangle.log_level?(:debug) do
+        # skip the measuring depending on log level
         start = :erlang.monotonic_time()
         result = unquote(fn_body)
         finish = :erlang.monotonic_time()
