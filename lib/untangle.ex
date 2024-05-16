@@ -1,7 +1,5 @@
 defmodule Untangle do
-  @moduledoc """
-  Logging and debug printing that include location information
-  """
+  @moduledoc "./README.md" |> File.stream!() |> Enum.drop(1) |> Enum.join()
 
   defmacro __using__(_) do
     quote do
