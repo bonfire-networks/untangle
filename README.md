@@ -5,15 +5,17 @@ Logging/inspecting data, and timing functions, with code location information.
 ## Logging/inspecting
 `Untangle` provides alternatives for `IO.inspect` and the macros in Elixir's `Logger` to output code location information. It also provides a polyfill for `dbg` which was introduce in Elixir 1.14
 
+![screenshot](priv/screenshot.png "Screenshot showing sample logs (shown when running the library tests)")
+
 The first argument is `inspect`ed and the second argument (if provided) is used as a label:
 
 ```
-iex(1)> import Untangle
+> import Untangle
 Untangle
-iex(2)> debug(:no, "the answer is") # log at debug
+> debug(:no, "the answer is") # log at debug
 11:19:09.915 [debug] [iex:2] the answer is: :no
 :no
-iex(3)> dump(%{a: :map}, "it") # inspect something on stdout
+> dump(%{a: :map}, "it") # inspect something on stdout
 [iex:3] it: %{a: :map}
 %{a: :map}
 ```

@@ -1,4 +1,4 @@
-defmodule UntangleTest do
+defmodule Untangle.Test do
   use ExUnit.Case
   import Untangle
 
@@ -11,21 +11,23 @@ defmodule UntangleTest do
     Logger.configure(level: :debug)
 
     dump(value())
-    dump(value(), "testing dump")
+    dump(value(), "testing dump with label")
 
     debug(value())
-    debug(value(), "testing debug")
+    debug(value(), "testing debug with label")
 
     info(value())
-    info(value(), "testing info")
+    info(value(), "testing info with label")
 
     warn(value())
-    warn(value(), "testing warn")
+    warn(value(), "testing warn with label")
 
-    error(value())
-    error(value(), "testing error")
-    error({:error, value()})
-    error({:error, value()}, "test error")
+    assert {:error, :a_value} = error(value())
+    assert {:error, "testing error with label"} = error(value(), "testing error with label")
+    assert {:error, :a_value} = error({:error, value()})
+
+    assert {:error, "testing error tuple with label"} =
+             error({:error, value()}, "testing error tuple with label")
 
     maybe_dbg(value(), "do not debug", [])
     maybe_dbg(value(), "optionally debug", debug: true)
