@@ -12,7 +12,7 @@ defmodule Untangle.Time do
 
         time = :erlang.convert_time_unit(finish - start, :native, :microsecond)
 
-        if time > 800,
+        if time > Application.get_env(:untangle, :time_slow_min, 10_000),
           do:
             Logger.debug(
               "#{time / 1_000} ms to run #{unquote(context.module)}.#{unquote(context.name)}/#{unquote(context.arity)}"
