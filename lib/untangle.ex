@@ -420,7 +420,11 @@ defmodule Untangle do
 
     {formatted, result} = dbg_format_ast_to_debug(to_debug, options)
 
-    header_string = if(header_string != nil, do: "#{header_string}: ", else: "")
+    header_string = cond do
+      is_nil(header_string) -> ""
+      is_binary(header_string) -> "#{header_string}: "
+      true -> "#{inspect header_string}: "
+    end
 
     formatted =
       cond do
@@ -431,7 +435,7 @@ defmodule Untangle do
           [:italic, header_string, :reset, formatted, ?\n, :faint, options[:stacktrace]]
 
         print_location? && header_string != "" ->
-          [:italic, header_string, ":", :reset, formatted]
+          [:italic, header_string, :reset, formatted]
 
         true ->
           [formatted]
