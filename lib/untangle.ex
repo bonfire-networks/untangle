@@ -420,11 +420,12 @@ defmodule Untangle do
 
     {formatted, result} = dbg_format_ast_to_debug(to_debug, options)
 
-    header_string = cond do
-      is_nil(header_string) -> ""
-      is_binary(header_string) -> "#{header_string}: "
-      true -> "#{inspect header_string}: "
-    end
+    header_string =
+      cond do
+        is_nil(header_string) -> ""
+        is_binary(header_string) -> "#{header_string}: "
+        true -> "#{inspect(header_string)}: "
+      end
 
     formatted =
       cond do
