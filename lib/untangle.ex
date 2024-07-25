@@ -176,23 +176,21 @@ defmodule Untangle do
   - an error tuple with the label, if any
   - an error tuple with the passed value otherwise
 
-  ```
-  iex> error(:value)
-  ### [error] :value
-  {:error, :value}
+      iex> error(:value)
+    ### [error] :value
+    {:error, :value}
 
-  iex> error({:error, :value})
-  ### [error] :value
-  {:error, :value}
+      iex> error({:error, :value})
+    ### [error] :value
+    {:error, :value}
 
-  iex> error(:value, "with label")
-  ### [error] with label: :value
-  {:error, "with label"}
+      iex> error(:value, "with label")
+    ### [error] with label: :value
+    {:error, "with label"}
 
-  iex> error({:error, :value}, "with label")
-  ### [error] with label: :value
-  {:error, "with label"}
-  ```
+      iex> error({:error, :value}, "with label")
+    ### [error] with label: :value
+    {:error, "with label"}
   """
   defmacro error(thing, label \\ nil, opts \\ []) do
     # pre = format_label(__CALLER__)
