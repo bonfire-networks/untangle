@@ -1,9 +1,9 @@
 defmodule Untangle do
   @moduledoc "./README.md" |> File.stream!() |> Enum.drop(1) |> Enum.join()
 
-  defmacro __using__(_) do
+  defmacro __using__(opts) do
     quote do
-      import Untangle
+      import Untangle, unquote(opts)
       require Logger
       use Untangle.Time
     end
