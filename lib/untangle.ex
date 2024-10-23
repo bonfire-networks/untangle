@@ -230,17 +230,12 @@ defmodule Untangle do
     end
   end
 
+  # TODO: check this at compile time and inline it so we don't check at runtime?
   def log_level?(level) do
     min_level =
-      if env_level = Application.get_env(:logger, :level) do
-        env_level
-      else
-        :debug
-      end
+      Application.get_env(:untangle, :level) || Application.get_env(:logger, :level) || :debug
 
-    if Logger.compare_levels(level, min_level) != :lt do
-      true
-    end
+    Logger.compare_levels(level, min_level) != :lt
   end
 
   @doc "Like `debug`, but will do nothing unless the `:debug` option is truthy"
