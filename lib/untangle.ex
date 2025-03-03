@@ -47,7 +47,7 @@ defmodule Untangle do
           )
         )
 
-      Logger.info(formatted)
+      if Untangle.to_io?(), do: IO.puts(formatted), else: Logger.info(formatted)
       result
     end
   end
@@ -84,7 +84,7 @@ defmodule Untangle do
             )
           )
 
-        Logger.debug(formatted)
+        if Untangle.to_io?(), do: IO.puts(formatted), else: Logger.debug(formatted)
         result
       else
         unquote(thing)
@@ -124,7 +124,7 @@ defmodule Untangle do
             )
           )
 
-        Logger.info(formatted)
+        if Untangle.to_io?(), do: IO.puts(formatted), else: Logger.info(formatted)
         result
       else
         unquote(thing)
@@ -163,7 +163,7 @@ defmodule Untangle do
             printable_limit: 10000
           )
 
-        Logger.warning(formatted)
+        if Untangle.to_io?(), do: IO.puts(formatted), else: Logger.warning(formatted)
         result
       else
         unquote(thing)
@@ -222,7 +222,7 @@ defmodule Untangle do
             printable_limit: 10000
           )
 
-        Logger.error(formatted)
+        if Untangle.to_io?(), do: IO.puts(formatted), else: Logger.error(formatted)
         Untangle.__return_error__(unquote(label), result)
       else
         Untangle.__return_error__(unquote(label), unquote(thing))
@@ -236,6 +236,10 @@ defmodule Untangle do
       Application.get_env(:untangle, :level) || Application.get_env(:logger, :level) || :debug
 
     Logger.compare_levels(level, min_level) != :lt
+  end
+
+  def to_io? do
+    Application.get_env(:untangle, :to_io, false)
   end
 
   @doc "Like `debug`, but will do nothing unless the `:debug` option is truthy"
