@@ -11,10 +11,12 @@ defmodule Untangle do
 
   @doc "IO.inspect but outputs to Logger with position information, an optional label and configured not to truncate output too much."
   defmacro dump(thing, label \\ nil, opts \\ []) do
-    # pre = format_label(__CALLER__)
+    # stacktrace = Untangle.get_current_stacktrace() 
+    #   stacktrace = Macro.Env.stacktrace(__CALLER__)
+    location = format_label(__CALLER__)
 
     quote do
-      # unquote(__MODULE__).__dbg__(
+      # Untangle.__dbg__(
       #   "#{unquote(pre)} #{unquote(label)}",
       #   unquote(thing)
       # )
@@ -22,22 +24,18 @@ defmodule Untangle do
       require Logger
 
       opts = unquote(opts)
-      # pre = unquote(pre)
-      {:current_stacktrace, stacktrace} = :erlang.process_info(self(), :current_stacktrace)
-      pre = Untangle.format_stacktrace_label(stacktrace, opts[:trace_skip] || 0)
+      # stacktrace = unquote(Untangle.get_current_stacktrace()) 
 
       {formatted, result} =
-        unquote(__MODULE__).__prepare_dbg__(
+        Untangle.__prepare_dbg__(
           unquote(label),
           unquote(thing),
           Keyword.merge(
             [
               location:
                 if opts[:print_location] != false do
-                  {:current_stacktrace, stacktrace} =
-                    :erlang.process_info(self(), :current_stacktrace)
-
-                  Untangle.format_stacktrace_label(stacktrace, opts[:trace_skip] || 0)
+                  unquote(location)
+                  # Untangle.format_stacktrace_label(stacktrace, opts[:trace_skip] || 0)
                 end,
               pretty: true,
               limit: :infinity,
@@ -54,27 +52,26 @@ defmodule Untangle do
 
   @doc "Like `dump`, but for logging at debug level"
   defmacro debug(thing, label \\ nil, opts \\ []) do
-    # pre = format_label(__CALLER__)
+    # stacktrace = Untangle.get_current_stacktrace() 
+    location = format_label(__CALLER__)
 
     quote do
       if Untangle.log_level?(:debug) do
         require Logger
 
         opts = unquote(opts)
-        # pre = unquote(pre)
+        # stacktrace = unquote(Untangle.get_current_stacktrace()) 
 
         {formatted, result} =
-          unquote(__MODULE__).__prepare_dbg__(
+          Untangle.__prepare_dbg__(
             unquote(label),
             unquote(thing),
             Keyword.merge(
               [
                 location:
                   if opts[:print_location] != false do
-                    {:current_stacktrace, stacktrace} =
-                      :erlang.process_info(self(), :current_stacktrace)
-
-                    Untangle.format_stacktrace_label(stacktrace, opts[:trace_skip] || 0)
+                    unquote(location)
+                    # Untangle.format_stacktrace_label(stacktrace, opts[:trace_skip] || 0)
                   end,
                 pretty: true,
                 limit: 10000,
@@ -94,27 +91,26 @@ defmodule Untangle do
 
   @doc "Like `dump`, but for logging at info level"
   defmacro info(thing, label \\ nil, opts \\ []) do
-    # pre = format_label(__CALLER__)
+    # stacktrace = Untangle.get_current_stacktrace() 
+    location = format_label(__CALLER__)
 
     quote do
       if Untangle.log_level?(:info) do
         require Logger
 
         opts = unquote(opts)
-        # pre = unquote(pre)
+        # stacktrace = unquote(Untangle.get_current_stacktrace()) 
 
         {formatted, result} =
-          unquote(__MODULE__).__prepare_dbg__(
+          Untangle.__prepare_dbg__(
             unquote(label),
             unquote(thing),
             Keyword.merge(
               [
                 location:
                   if opts[:print_location] != false do
-                    {:current_stacktrace, stacktrace} =
-                      :erlang.process_info(self(), :current_stacktrace)
-
-                    Untangle.format_stacktrace_label(stacktrace, opts[:trace_skip] || 0)
+                    unquote(location)
+                    # Untangle.format_stacktrace_label(stacktrace, opts[:trace_skip] || 0)
                   end,
                 pretty: true,
                 limit: 10000,
@@ -134,33 +130,41 @@ defmodule Untangle do
 
   @doc "Like `dump`, but for logging at warn level"
   defmacro warn(thing, label \\ nil, opts \\ []) do
-    # pre = format_label(__CALLER__)
-    # thang = Macro.var(:thing, __MODULE__)
+    # stacktrace = Untangle.get_current_stacktrace() 
+    location = format_label(__CALLER__)
 
     quote do
       if Untangle.log_level?(:warning) do
         require Logger
 
         opts = unquote(opts)
+        # stacktrace = Untangle.get_current_stacktrace()
 
         {formatted, result} =
-          unquote(__MODULE__).__prepare_dbg__(
+          Untangle.__prepare_dbg__(
             unquote(label),
             unquote(thing),
-            stacktrace:
-              if opts[:print_location] != false do
-                {:current_stacktrace, stacktrace} =
-                  :erlang.process_info(self(), :current_stacktrace)
-
-                Untangle.format_stacktrace_sliced(
-                  stacktrace,
-                  opts[:trace_skip] || 0,
-                  opts[:trace_limit] || 5
-                )
-              end,
-            pretty: true,
-            limit: 10000,
-            printable_limit: 10000
+            Keyword.merge(
+              [
+                # location:
+                #   if opts[:print_location] != false do
+                #     unquote(location)
+                #     # Untangle.format_stacktrace_label(stacktrace, opts[:trace_skip] || 0)
+                #   end,
+                stacktrace:
+                  if opts[:print_location] != false do
+                    Untangle.format_stacktrace_sliced(
+                      Untangle.get_current_stacktrace(),
+                      opts[:trace_skip] || 0,
+                      opts[:trace_limit] || 5
+                    )
+                  end,
+                pretty: true,
+                limit: 10000,
+                printable_limit: 10000
+              ],
+              opts
+            )
           )
 
         if Untangle.to_io?(), do: IO.puts(formatted), else: Logger.warning(formatted)
@@ -193,81 +197,47 @@ defmodule Untangle do
     {:error, "with label"}
   """
   defmacro error(thing, label \\ nil, opts \\ []) do
-    # pre = format_label(__CALLER__)
-    # stacktrace = Macro.Env.stacktrace(__CALLER__) 
+    # stacktrace = Untangle.get_current_stacktrace() 
+    location = format_label(__CALLER__)
 
     quote do
       if Untangle.log_level?(:error) do
         require Logger
 
         opts = unquote(opts)
+        # stacktrace = unquote(Untangle.get_current_stacktrace()) 
 
         {formatted, result} =
-          unquote(__MODULE__).__prepare_dbg__(
+          Untangle.__prepare_dbg__(
             unquote(label),
             Untangle.__naked_error__(unquote(thing)),
-            stacktrace:
-              if opts[:print_location] != false do
-                {:current_stacktrace, stacktrace} =
-                  :erlang.process_info(self(), :current_stacktrace)
-
-                Untangle.format_stacktrace_sliced(
-                  stacktrace,
-                  opts[:trace_skip] || 0,
-                  opts[:trace_limit] || 8
-                )
-              end,
-            pretty: true,
-            limit: 10000,
-            printable_limit: 10000
+            Keyword.merge(
+              [
+                # location:
+                #     if opts[:print_location] != false do
+                #       unquote(location)
+                #       # Untangle.format_stacktrace_label(stacktrace, opts[:trace_skip] || 0)
+                #     end,
+                stacktrace:
+                  if opts[:print_location] != false do
+                    Untangle.format_stacktrace_sliced(
+                      Untangle.get_current_stacktrace(),
+                      opts[:trace_skip] || 0,
+                      opts[:trace_limit] || 8
+                    )
+                  end,
+                pretty: true,
+                limit: 10000,
+                printable_limit: 10000
+              ],
+              opts
+            )
           )
 
         if Untangle.to_io?(), do: IO.puts(formatted), else: Logger.error(formatted)
         Untangle.__return_error__(unquote(label), result)
       else
         Untangle.__return_error__(unquote(label), unquote(thing))
-      end
-    end
-  end
-
-  # TODO: check this at compile time and inline it so we don't check at runtime?
-  def log_level?(level) do
-    min_level =
-      Application.get_env(:untangle, :level) || Application.get_env(:logger, :level) || :debug
-
-    Logger.compare_levels(level, min_level) != :lt
-  end
-
-  def to_io? do
-    Application.get_env(:untangle, :to_io, false)
-  end
-
-  @doc "Like `debug`, but will do nothing unless the `:debug` option is truthy"
-  defmacro maybe_dbg(thing, label \\ "", options) do
-    opts = Macro.var(:opts, __MODULE__)
-
-    quote do
-      unquote(opts) = unquote(options)
-
-      if unquote(opts)[:debug] do
-        debug(unquote(thing), unquote(label))
-      else
-        unquote(thing)
-      end
-    end
-  end
-
-  @doc "Like `maybe_dbg`, but requires the `:verbose` option to be set. Intended for large outputs."
-  defmacro maybe_info(thing, label \\ "", options) do
-    opts = Macro.var(:opts, __MODULE__)
-
-    quote do
-      unquote(opts) = unquote(options)
-
-      if unquote(opts)[:verbose] do
-        info(unquote(thing), unquote(label))
-      else
-        unquote(thing)
       end
     end
   end
@@ -281,6 +251,7 @@ defmodule Untangle do
     pre = format_label(__CALLER__)
     opts = Macro.var(:opts, __MODULE__)
     thang = Macro.var(:thing, __MODULE__)
+    # stacktrace = Macro.Env.stacktrace(__CALLER__) 
 
     quote do
       require Logger
@@ -319,6 +290,36 @@ defmodule Untangle do
     end
   end
 
+  @doc "Like `debug`, but will do nothing unless the `:debug` option is truthy"
+  defmacro maybe_dbg(thing, label \\ "", options) do
+    opts = Macro.var(:opts, __MODULE__)
+
+    quote do
+      unquote(opts) = unquote(options)
+
+      if unquote(opts)[:debug] do
+        debug(unquote(thing), unquote(label))
+      else
+        unquote(thing)
+      end
+    end
+  end
+
+  @doc "Like `maybe_dbg`, but requires the `:verbose` option to be set. Intended for large outputs."
+  defmacro maybe_info(thing, label \\ "", options) do
+    opts = Macro.var(:opts, __MODULE__)
+
+    quote do
+      unquote(opts) = unquote(options)
+
+      if unquote(opts)[:verbose] do
+        info(unquote(thing), unquote(label))
+      else
+        unquote(thing)
+      end
+    end
+  end
+
   @doc """
   Custom backend for `Kernel.dbg/2`.
   This function provides a backend for `Kernel.dbg/2`.
@@ -331,7 +332,7 @@ defmodule Untangle do
     header = "#{format_label(env)} #{options[:label]}:"
 
     quote do
-      unquote(__MODULE__).__dbg__(
+      Untangle.__dbg__(
         unquote(header),
         unquote(dbg_ast_to_debuggable(code)),
         unquote(options)
@@ -346,6 +347,23 @@ defmodule Untangle do
     defmacro dbg(code \\ quote(do: binding()), options \\ []) do
       custom_dbg(code, options, __CALLER__)
     end
+  end
+
+  def get_current_stacktrace do
+    Process.info(self(), :current_stacktrace)
+    |> elem(1)
+  end
+
+  # TODO: check this at compile time and inline it so we don't check at runtime?
+  def log_level?(level) do
+    min_level =
+      Application.get_env(:untangle, :level) || Application.get_env(:logger, :level) || :debug
+
+    Logger.compare_levels(level, min_level) != :lt
+  end
+
+  def to_io? do
+    Application.get_env(:untangle, :to_io, false)
   end
 
   # Pipelines - copied from `Macro.dbg/2`
@@ -417,11 +435,14 @@ defmodule Untangle do
 
     {formatted, result} = dbg_format_ast_to_debug(to_debug, options)
 
+    # random_integer = :rand.uniform(1000)
+
     header_string =
       cond do
+        #  "[##{random_integer}]"
         is_nil(header_string) -> ""
         is_binary(header_string) -> "#{header_string}: "
-        true -> "#{inspect(header_string)}: "
+        true -> "#{inspect(header_string)}:"
       end
 
     formatted =
@@ -515,14 +536,21 @@ defmodule Untangle do
       if function_exported?(Mix.Project, :config, 0),
         do: Mix.Project.config()[:app]
 
-    file = Path.relative_to_cwd(caller.file)
+    # TODO: better path handing for deps
+    # if dep_path = function_exported?(caller.module, :__info__, 1) and caller.module.__info__(:compile)[:source] do
+    #   Path.relative_to_cwd(dep_path) 
+    # else
+    file =
+      "#{app}/#{Path.relative_to_cwd(caller.file)}"
+
+    # end
 
     case caller.function do
       {fun, arity} ->
-        "[#{app}/#{file}:#{caller.line}@#{module_name(caller.module)}.#{fun}/#{arity}]"
+        "#{file}:#{caller.line} @ #{module_name(caller.module)}.#{fun}/#{arity}"
 
       _ ->
-        "[#{app}/#{file}:#{caller.line}]"
+        "#{file}:#{caller.line}"
     end
   end
 
@@ -532,11 +560,23 @@ defmodule Untangle do
     |> format_stacktrace_entry()
   end
 
-  def format_stacktrace_sliced(stacktrace, starts \\ 1, amount \\ 5)
+  def format_stacktrace_sliced(stacktrace, starts \\ 0, amount \\ 5)
+
+  def format_stacktrace_sliced(stacktrace, nil, nil) when is_list(stacktrace) do
+    format_stacktrace_sliced(stacktrace, 0, 100)
+  end
+
+  def format_stacktrace_sliced(stacktrace, starts, nil) when is_list(stacktrace) do
+    format_stacktrace_sliced(stacktrace, starts, 100)
+  end
+
+  def format_stacktrace_sliced(stacktrace, nil, amount) when is_list(stacktrace) do
+    format_stacktrace_sliced(stacktrace, 0, amount)
+  end
 
   def format_stacktrace_sliced(stacktrace, starts, amount) when is_list(stacktrace) do
     stacktrace
-    |> Enum.slice(starts, amount)
+    |> Enum.slice(starts + 2, amount + 2)
     |> format_stacktrace()
   end
 
