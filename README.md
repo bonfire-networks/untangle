@@ -49,8 +49,7 @@ will output something like `[info] Time to run MyModule.fun/0: 1 ms`
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `untangle` to your list of dependencies in `mix.exs`:
+If [available in Hex](https://hex.pm/docs/publish), the package can be installed by adding `untangle` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
@@ -58,6 +57,13 @@ def deps do
     {:untangle, "~> 0.3"}
   ]
 end
+```
+
+and adding some config:
+
+```elixir
+config :untangle, 
+  env: config_env()
 ```
 
 # Configure as default `dbg/2` handler

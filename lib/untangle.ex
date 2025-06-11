@@ -682,4 +682,70 @@ defmodule Untangle do
     do: {:error, label}
 
   def __return_error__(_label, object), do: {:error, object}
+
+  @doc "Like `IO.inspect/2`, but accepts a string as second argument and does not truncate the output"
+  def flood(msg) when is_binary(msg), do: flood(nil, msg)
+  def flood(data) when not is_binary(data), do: flood(data, "Inspect")
+
+  def flood(data, msg) when is_binary(msg) do
+    IO.inspect(data, label: msg, limit: :infinity)
+  end
+
+  @doc """
+  Logs or raises errors based on environment.
+
+  This function handles errors differently depending on the environment:
+  - In test: raises an exception
+  - In dev: prints a warning
+  - In production: logs a warning
+
+  ## Examples
+
+      # With just a message
+      iex> # When in dev/prod (not test), prints a warning and does not raise
+      iex> # Note: Only testing return value here, not side effects
+      iex> Process.put([:bonfire, :env], :dev)
+      iex> err("error message")
+      # Prints: [warning] error message
+      nil
+
+      # With just data
+      iex> Process.put([:bonfire, :env], :dev)
+      iex> err(%{key: "value"})
+      # Prints: [warning] An error occurred: %{key: "value"}
+      %{key: "value"}
+
+      # With both data and message
+      iex> Process.put([:bonfire, :env], :dev)
+      iex> err(%{key: "value"}, "Custom error message")
+      # Prints: [warning] Custom error message: %{key: "value"}
+      %{key: "value"}
+
+  In test environment, it raises an exception:
+
+      iex> Process.put([:bonfire, :env], :test)
+      iex> err("test error")
+      ** (RuntimeError) test error
+  """
+  def err(msg) when is_binary(msg), do: err(nil, msg)
+  def err(data) when not is_binary(data), do: err(data, "An error occurred")
+
+  def err(data, msg) when is_binary(msg) do
+    case Application.get_env(:untangle, :env) do
+      :test ->
+        if data, do: IO.inspect(data)
+        raise msg
+
+      :dev ->
+        # error(data, msg)
+        if data,
+          do: IO.warn("#{msg}: #{inspect(data)}"),
+          else: IO.warn(msg)
+
+        data
+
+      _prod_etc ->
+        warn(data, msg)
+    end
+  end
 end
