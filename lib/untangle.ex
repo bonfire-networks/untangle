@@ -24,7 +24,7 @@ defmodule Untangle do
       require Logger
 
       opts = unquote(opts)
-      # stacktrace = unquote(Untangle.get_current_stacktrace()) 
+      # stacktrace = unquote(opts[:stacktrace] || Untangle.get_current_stacktrace()) 
 
       {formatted, result} =
         Untangle.__prepare_dbg__(
@@ -60,7 +60,7 @@ defmodule Untangle do
         require Logger
 
         opts = unquote(opts)
-        # stacktrace = unquote(Untangle.get_current_stacktrace()) 
+        # stacktrace = unquote(opts[:stacktrace] || Untangle.get_current_stacktrace()) 
 
         {formatted, result} =
           Untangle.__prepare_dbg__(
@@ -99,7 +99,7 @@ defmodule Untangle do
         require Logger
 
         opts = unquote(opts)
-        # stacktrace = unquote(Untangle.get_current_stacktrace()) 
+        # stacktrace = unquote(opts[:stacktrace] || Untangle.get_current_stacktrace()) 
 
         {formatted, result} =
           Untangle.__prepare_dbg__(
@@ -130,7 +130,6 @@ defmodule Untangle do
 
   @doc "Like `dump`, but for logging at warn level"
   defmacro warn(thing, label \\ nil, opts \\ []) do
-    # stacktrace = Untangle.get_current_stacktrace() 
     location = format_label(__CALLER__)
 
     quote do
@@ -138,7 +137,6 @@ defmodule Untangle do
         require Logger
 
         opts = unquote(opts)
-        # stacktrace = Untangle.get_current_stacktrace()
 
         {formatted, result} =
           Untangle.__prepare_dbg__(
@@ -154,7 +152,7 @@ defmodule Untangle do
                 stacktrace:
                   if opts[:print_location] != false do
                     Untangle.format_stacktrace_sliced(
-                      Untangle.get_current_stacktrace(),
+                      opts[:stacktrace] || Untangle.get_current_stacktrace(),
                       opts[:trace_skip] || 0,
                       opts[:trace_limit] || 5
                     )
@@ -197,7 +195,6 @@ defmodule Untangle do
     {:error, "with label"}
   """
   defmacro error(thing, label \\ nil, opts \\ []) do
-    # stacktrace = Untangle.get_current_stacktrace() 
     location = format_label(__CALLER__)
 
     quote do
@@ -205,7 +202,6 @@ defmodule Untangle do
         require Logger
 
         opts = unquote(opts)
-        # stacktrace = unquote(Untangle.get_current_stacktrace()) 
 
         {formatted, result} =
           Untangle.__prepare_dbg__(
@@ -221,7 +217,7 @@ defmodule Untangle do
                 stacktrace:
                   if opts[:print_location] != false do
                     Untangle.format_stacktrace_sliced(
-                      Untangle.get_current_stacktrace(),
+                      opts[:stacktrace] || Untangle.get_current_stacktrace(),
                       opts[:trace_skip] || 0,
                       opts[:trace_limit] || 8
                     )
@@ -730,22 +726,30 @@ defmodule Untangle do
   def err(msg) when is_binary(msg), do: err(nil, msg)
   def err(data) when not is_binary(data), do: err(data, "An error occurred")
 
-  def err(data, msg) when is_binary(msg) do
+  def err(data, msg, opts \\ []) when is_binary(msg) do
     case Application.get_env(:untangle, :env) do
       :test ->
-        if data, do: IO.inspect(data)
+        if data, do: io_warn(data, opts[:stacktrace])
         raise msg
 
       :dev ->
         # error(data, msg)
         if data,
-          do: IO.warn("#{msg}: #{inspect(data)}"),
-          else: IO.warn(msg)
+          do: io_warn("[error] #{msg}: #{inspect(data)}", opts[:stacktrace]),
+          else: io_warn("[error] #{msg}", opts[:stacktrace])
 
         data
 
       _prod_etc ->
-        warn(data, msg)
+        error(data, msg, opts)
     end
+  end
+
+  defp io_warn(msg, nil) do
+    IO.warn(msg)
+  end
+
+  defp io_warn(msg, stacktrace_info) do
+    IO.warn(msg, stacktrace_info)
   end
 end
