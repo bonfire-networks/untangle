@@ -746,10 +746,10 @@ defmodule Untangle do
   end
 
   defp io_warn(msg, nil) do
-    IO.warn(msg)
+    IO.warn(if is_binary(msg), do: msg, else: inspect(msg))
   end
 
   defp io_warn(msg, stacktrace_info) do
-    IO.warn(msg, stacktrace_info)
+    IO.warn(if(is_binary(msg), do: msg, else: inspect(msg)), stacktrace_info)
   end
 end
