@@ -1,5 +1,6 @@
 defmodule Untangle do
   @moduledoc "./README.md" |> File.stream!() |> Enum.drop(1) |> Enum.join()
+  require Logger
 
   defmacro __using__(opts) do
     quote do
@@ -45,7 +46,7 @@ defmodule Untangle do
           )
         )
 
-      if Untangle.to_io?(), do: IO.puts(formatted), else: Logger.info(formatted)
+      Untangle.log_or_flood(:info, formatted)
       result
     end
   end
@@ -81,7 +82,7 @@ defmodule Untangle do
             )
           )
 
-        if Untangle.to_io?(), do: IO.puts(formatted), else: Logger.debug(formatted)
+        Untangle.log_or_flood(:debug, formatted)
         result
       else
         unquote(thing)
@@ -120,7 +121,7 @@ defmodule Untangle do
             )
           )
 
-        if Untangle.to_io?(), do: IO.puts(formatted), else: Logger.info(formatted)
+        Untangle.log_or_flood(:info, formatted)
         result
       else
         unquote(thing)
@@ -165,7 +166,7 @@ defmodule Untangle do
             )
           )
 
-        if Untangle.to_io?(), do: IO.puts(formatted), else: Logger.warning(formatted)
+        Untangle.log_or_flood(:warning, formatted)
         result
       else
         unquote(thing)
@@ -230,7 +231,7 @@ defmodule Untangle do
             )
           )
 
-        if Untangle.to_io?(), do: IO.puts(formatted), else: Logger.error(formatted)
+        Untangle.log_or_flood(:error, formatted)
         Untangle.__return_error__(unquote(label), result)
       else
         Untangle.__return_error__(unquote(label), unquote(thing))
@@ -751,5 +752,20 @@ defmodule Untangle do
 
   defp io_warn(msg, stacktrace_info) do
     IO.warn(if(is_binary(msg), do: msg, else: inspect(msg)), stacktrace_info)
+  end
+
+  # Add this helper function at module level (private)
+  def log_or_flood(level, formatted) when is_binary(formatted) or is_list(formatted) do
+    if to_io?() do
+      IO.puts(formatted)
+    else
+      Logger.log(level, formatted)
+    end
+  catch
+    _e -> log_or_flood(level, inspect(formatted))
+  end
+
+  def log_or_flood(level, formatted) do
+    log_or_flood(level, inspect(formatted))
   end
 end
