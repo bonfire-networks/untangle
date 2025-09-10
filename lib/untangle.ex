@@ -681,10 +681,16 @@ defmodule Untangle do
   def __return_error__(_label, object), do: {:error, object}
 
   @doc "Like `IO.inspect/2`, but accepts a string as second argument and does not truncate the output"
-  def flood(msg) when is_binary(msg), do: flood(nil, msg)
-  def flood(data) when not is_binary(data), do: flood(data, "Inspect")
+  def flood(msg_or_data), do: io_inspect(msg_or_data)
 
   def flood(data, msg) when is_binary(msg) do
+    io_inspect(data, msg)
+  end
+
+  def io_inspect(msg) when is_binary(msg), do: IO.puts(msg)
+  def io_inspect(data) when not is_binary(data), do: io_inspect(data, "Inspect")
+
+  def io_inspect(data, msg) when is_binary(msg) do
     IO.inspect(data, label: msg, limit: :infinity)
   end
 
