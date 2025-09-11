@@ -687,7 +687,7 @@ defmodule Untangle do
     io_inspect(data, msg)
   end
 
-  def io_inspect(msg) when is_binary(msg), do: IO.puts(msg)
+  def io_inspect(msg) when is_binary(msg), do: IO.warn(msg)
   def io_inspect(data) when not is_binary(data), do: io_inspect(data, "Inspect")
 
   def io_inspect(data, msg) when is_binary(msg) do
