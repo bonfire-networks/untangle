@@ -736,7 +736,7 @@ defmodule Untangle do
   def err(data, msg, opts \\ []) when is_binary(msg) do
     case Application.get_env(:untangle, :env) do
       :test ->
-        if data, do: io_warn(data, opts[:stacktrace])
+        io_warn(data, opts[:stacktrace])
         raise msg
 
       :dev ->
@@ -760,7 +760,6 @@ defmodule Untangle do
     IO.warn(if(is_binary(msg), do: msg, else: inspect(msg)), stacktrace_info)
   end
 
-  # Add this helper function at module level (private)
   def log_or_flood(level, formatted) when is_binary(formatted) or is_list(formatted) do
     if to_io?() do
       IO.puts(formatted)
