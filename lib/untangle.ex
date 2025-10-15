@@ -752,6 +752,27 @@ defmodule Untangle do
     end
   end
 
+  def warner(msg) when is_binary(msg), do: warner(nil, msg)
+  def warner(data) when not is_binary(data), do: warner(data, "Warning")
+
+  def warner(data, msg, opts \\ []) when is_binary(msg) do
+    case Application.get_env(:untangle, :env) do
+      env when env in [:dev, :test] ->
+        if data,
+          do:
+            io_warn(
+              "#{msg}: #{if(is_binary(data), do: data, else: inspect(data))}",
+              opts[:stacktrace]
+            ),
+          else: io_warn("#{msg}", opts[:stacktrace])
+
+        data
+
+      _prod_etc ->
+        warn(data, msg, opts)
+    end
+  end
+
   defp io_warn(msg, nil) do
     IO.warn(if is_binary(msg), do: msg, else: inspect(msg))
   end
