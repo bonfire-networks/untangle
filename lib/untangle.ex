@@ -765,7 +765,7 @@ defmodule Untangle do
 
   def warner(data, msg, opts \\ []) when is_binary(msg) do
     case Application.get_env(:untangle, :env) do
-      env when env in [:dev, :test] ->
+      :dev ->
         if data,
           do:
             io_warn(
