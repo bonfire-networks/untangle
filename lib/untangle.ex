@@ -687,7 +687,7 @@ defmodule Untangle do
     io_inspect(data, msg)
   end
 
-  def io_inspect(msg) when is_binary(msg), do: IO.warn(msg)
+  def io_inspect(msg) when is_binary(msg), do: IO.puts(msg)
   def io_inspect(data) when not is_binary(data), do: io_inspect(data, "Inspect")
 
   def io_inspect(data, msg) when is_binary(msg) do
@@ -741,11 +741,19 @@ defmodule Untangle do
 
       :dev ->
         # error(data, msg)
-        if data,
-          do: io_warn("[error] #{msg}: #{inspect(data)}", opts[:stacktrace]),
-          else: io_warn("[error] #{msg}", opts[:stacktrace])
+        case data do
+          nil ->
+            io_warn("[error] #{msg}", opts[:stacktrace])
+            {:error, nil}
 
-        data
+          {:error, data} ->
+            io_warn("[error] #{msg}: #{inspect(data)}", opts[:stacktrace])
+            {:error, data}
+
+          _ ->
+            io_warn("[error] #{msg}: #{inspect(data)}", opts[:stacktrace])
+            {:error, data}
+        end
 
       _prod_etc ->
         error(data, msg, opts)
