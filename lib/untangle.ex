@@ -733,51 +733,57 @@ defmodule Untangle do
   def err(msg) when is_binary(msg), do: err(nil, msg)
   def err(data) when not is_binary(data), do: err(data, "An error occurred")
 
-  def err(data, msg, opts \\ []) when is_binary(msg) do
-    case Application.get_env(:untangle, :env) do
+  if Application.compile_env(:untangle, :env) == :test do
+    def err(data, msg, opts \\ []) when is_binary(msg) do
       :test ->
         io_warn(data, opts[:stacktrace])
         raise msg
+    end
+  end
 
-      :dev ->
-        # error(data, msg)
-        case data do
-          nil ->
-            io_warn("[error] #{msg}", opts[:stacktrace])
-            {:error, nil}
+  if Application.compile_env(:untangle, :env) == :dev do
+    def err(data, msg, opts \\ []) when is_binary(msg) do
+      # error(data, msg)
+      case data do
+        nil ->
+          io_warn("[error] #{msg}", opts[:stacktrace])
+          {:error, nil}
 
-          {:error, data} ->
-            io_warn("[error] #{msg}: #{inspect(data)}", opts[:stacktrace])
-            {:error, data}
+        {:error, data} ->
+          io_warn("[error] #{msg}: #{inspect(data)}", opts[:stacktrace])
+          {:error, data}
 
-          _ ->
-            io_warn("[error] #{msg}: #{inspect(data)}", opts[:stacktrace])
-            {:error, data}
-        end
+        _ ->
+          io_warn("[error] #{msg}: #{inspect(data)}", opts[:stacktrace])
+          {:error, data}
+      end
+    end
+  end
 
-      _prod_etc ->
-        error(data, msg, opts)
+  if Application.compile_env(:untangle, :env) not in [:dev, :test] do
+    def err(data, msg, opts \\ []) when is_binary(msg) do
+      error(data, msg, opts)
     end
   end
 
   def warner(msg) when is_binary(msg), do: warner(nil, msg)
   def warner(data) when not is_binary(data), do: warner(data, "Warning")
 
-  def warner(data, msg, opts \\ []) when is_binary(msg) do
-    case Application.get_env(:untangle, :env) do
-      :dev ->
-        if data,
-          do:
-            io_warn(
-              "#{msg}: #{if(is_binary(data), do: data, else: inspect(data))}",
-              opts[:stacktrace]
-            ),
-          else: io_warn("#{msg}", opts[:stacktrace])
+  if Application.compile_env(:untangle, :env) not in [:dev, :test] do
+    def warner(data, msg, opts \\ []) when is_binary(msg) do
+      if data,
+        do:
+          io_warn(
+            "#{msg}: #{if(is_binary(data), do: data, else: inspect(data))}",
+            opts[:stacktrace]
+          ),
+        else: io_warn("#{msg}", opts[:stacktrace])
 
-        data
-
-      _prod_etc ->
-        warn(data, msg, opts)
+      data
+    end
+  else
+    def warner(data, msg, opts \\ []) when is_binary(msg) do
+      warn(data, msg, opts)
     end
   end
 
