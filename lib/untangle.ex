@@ -735,8 +735,8 @@ defmodule Untangle do
 
   if Application.compile_env(:untangle, :env) == :test do
     def err(data, msg, opts \\ []) when is_binary(msg) do
-        io_warn(data, opts[:stacktrace])
-        raise msg
+      io_warn(data, opts[:stacktrace])
+      raise msg
     end
   end
 
