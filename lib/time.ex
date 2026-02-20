@@ -119,7 +119,7 @@ defmodule Untangle.Time do
         if Untangle.log_level?(:debug) do
           # Get current stats or initialize
           previous_data =
-            Process.get({:untangle_time_process, unquote(Macro.escape(function_key))}, %{
+            ProcessTree.get({:untangle_time_process, unquote(Macro.escape(function_key))}, %{
               count: 0,
               time: 0
             })
