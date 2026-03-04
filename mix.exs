@@ -26,7 +26,7 @@ defmodule Untangle.MixProject do
       ],
       deps: [
         {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-        {:process_tree, "~> 0.2.1", optional: true},
+        {:process_tree, "~> 0.3.0", optional: true},
         {:decorator, "~> 1.4"}
       ]
     ]
