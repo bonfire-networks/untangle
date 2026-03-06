@@ -691,7 +691,7 @@ defmodule Untangle do
   def io_inspect(data) when not is_binary(data), do: io_inspect(data, "Inspect")
 
   def io_inspect(data, msg) when is_binary(msg) do
-    IO.inspect(data, label: msg, limit: :infinity)
+    IO.inspect(data, label: msg, limit: 10_000)
   end
 
   @doc """
