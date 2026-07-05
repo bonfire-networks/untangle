@@ -19,7 +19,7 @@ defmodule Untangle.Time do
   require Logger
 
   # Check at compile time if ProcessTree is available
-  @disable? !Untangle.log_level?(:debug)
+  @disable? !Untangle.log_enabled?(:debug)
   @process_tree_available Code.ensure_loaded?(ProcessTree)
 
   @doc """
@@ -60,7 +60,7 @@ defmodule Untangle.Time do
     else
       # In debug mode or can't determine at compile time, include runtime check
       quote do
-        if Untangle.log_level?(:debug) do
+        if Untangle.log_enabled?(:debug) do
           start = :erlang.monotonic_time()
           result = unquote(fn_body)
           finish = :erlang.monotonic_time()
@@ -116,7 +116,7 @@ defmodule Untangle.Time do
       function_key = "#{context.module}.#{context.name}/#{context.arity}"
 
       quote do
-        if Untangle.log_level?(:debug) do
+        if Untangle.log_enabled?(:debug) do
           # Get current stats or initialize
           previous_data =
             ProcessTree.get({:untangle_time_process, unquote(Macro.escape(function_key))}, %{
@@ -201,7 +201,7 @@ defmodule Untangle.Time do
         function_key = "#{context.module}.#{context.name}/#{context.arity}"
 
         quote do
-          if Untangle.log_level?(:debug) do
+          if Untangle.log_enabled?(:debug) do
             # Get accumulated time from parent processes, if any
             parent_data =
               ProcessTree.get({:untangle_time_tree, unquote(Macro.escape(function_key))},

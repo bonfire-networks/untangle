@@ -57,7 +57,7 @@ defmodule Untangle do
     location = format_label(__CALLER__)
 
     quote do
-      if Untangle.log_level?(:debug) do
+      if Untangle.log_enabled?(:debug) do
         require Logger
 
         opts = unquote(opts)
@@ -96,7 +96,7 @@ defmodule Untangle do
     location = format_label(__CALLER__)
 
     quote do
-      if Untangle.log_level?(:info) do
+      if Untangle.log_enabled?(:info) do
         require Logger
 
         opts = unquote(opts)
@@ -134,7 +134,7 @@ defmodule Untangle do
     location = format_label(__CALLER__)
 
     quote do
-      if Untangle.log_level?(:warning) do
+      if Untangle.log_enabled?(:warning) do
         require Logger
 
         opts = unquote(opts)
@@ -199,7 +199,7 @@ defmodule Untangle do
     location = format_label(__CALLER__)
 
     quote do
-      if Untangle.log_level?(:error) do
+      if Untangle.log_enabled?(:error) do
         require Logger
 
         opts = unquote(opts)
@@ -351,10 +351,10 @@ defmodule Untangle do
     |> elem(1)
   end
 
-  # TODO: check this at compile time and inline it so we don't check at runtime?
-  def log_level?(level) do
-    min_level =
-      Application.get_env(:untangle, :level) || Application.get_env(:logger, :level) || :debug
+  @doc "Whether a message at `level` would actually be logged (vs discarded by the current minimum level). Use to skip expensive work that only feeds a log line."
+  def log_enabled?(level) do
+    # `Logger.level/0` (not the :logger app env) so runtime `Logger.configure/1` changes apply
+    min_level = Application.get_env(:untangle, :level) || Logger.level()
 
     Logger.compare_levels(level, min_level) != :lt
   end
