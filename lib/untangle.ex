@@ -448,7 +448,14 @@ defmodule Untangle do
           [:italic, header_string, :reset, formatted, :faint, " @ ", options[:location]]
 
         print_location? && options[:stacktrace] ->
-          [:italic, header_string, :reset, formatted, ?\n, :faint, options[:stacktrace]]
+          # slice the inspected value here, while the structural ANSI is still symbolic atoms, so the stacktrace after it survives Logger's `:truncate` without any risk of clipping an escape sequence mid-slice
+          reserved =
+            String.length(to_string(header_string)) +
+              String.length(to_string(options[:stacktrace])) + 8
+
+          data = slice_to_log_limit(IO.iodata_to_binary(formatted), reserved: reserved)
+
+          [:italic, header_string, :reset, data, ?\n, :faint, options[:stacktrace]]
 
         print_location? && header_string != "" ->
           [:italic, header_string, :reset, formatted]
@@ -578,6 +585,34 @@ defmodule Untangle do
   end
 
   def format_stacktrace_sliced(_stacktrace, _, _), do: nil
+
+  @doc "The configured Logger `:truncate` limit (bytes) beyond which log messages get cut off. Returns `:infinity` when truncation is disabled."
+  def log_truncate_limit(default \\ 8096) do
+    console = Application.get_env(:logger, :console) || []
+
+    case console[:truncate] || Application.get_env(:logger, :truncate, default) do
+      :infinity -> :infinity
+      n when is_integer(n) and n > 0 -> n
+      _ -> default
+    end
+  end
+
+  @doc """
+  Slice `string` so it fits within the Logger `:truncate` budget (keeping the head), so the useful part survives rather than being cut off mid-message. Pass `reserved` to leave room for other parts of the same log line, e.g. slice a huge exception banner while reserving space for the stacktrace
+  that follows it.
+  """
+  def slice_to_log_limit(string, opts \\ []) do
+    string = to_string(string)
+
+    case opts[:log_limit] || log_truncate_limit() do
+      :infinity ->
+        string
+
+      limit ->
+        # Give `string` whatever budget is left after `reserved`, but never below a small floor (min) so its head (e.g. an exception's type + message) always shows — even when `reserved` (a long stacktrace) would otherwise leave no room. In that rare case the line exceeds `limit` and Logger trims the tail instead.
+        String.slice(string, 0, max(opts[:min] || 200, limit - (opts[:reserved] || 0)))
+    end
+  end
 
   @doc """
   Formats the stacktrace.
