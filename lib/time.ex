@@ -118,11 +118,14 @@ defmodule Untangle.Time do
       quote do
         if Untangle.log_enabled?(:debug) do
           # Get current stats or initialize
+          # `default:` as an option, not a bare second argument: ProcessTree.get/2 takes opts, and
+          # passing the value positionally raises in validate_default_options!. `cache: false`
+          # because the accumulated data is written back with Process.put below regardless
           previous_data =
-            ProcessTree.get({:untangle_time_process, unquote(Macro.escape(function_key))}, %{
-              count: 0,
-              time: 0
-            })
+            ProcessTree.get({:untangle_time_process, unquote(Macro.escape(function_key))},
+              cache: false,
+              default: %{count: 0, time: 0}
+            )
 
           # Measure this execution
           start = :erlang.monotonic_time()

@@ -61,6 +61,7 @@ defmodule Untangle do
         require Logger
 
         opts = unquote(opts)
+        limit = Untangle.log_truncate_limit()
         # stacktrace = unquote(opts[:stacktrace] || Untangle.get_current_stacktrace()) 
 
         {formatted, result} =
@@ -75,8 +76,8 @@ defmodule Untangle do
                     # Untangle.format_stacktrace_label(stacktrace, opts[:trace_skip] || 0)
                   end,
                 pretty: true,
-                limit: 10000,
-                printable_limit: 10000
+                limit: limit,
+                printable_limit: limit
               ],
               opts
             )
@@ -100,6 +101,7 @@ defmodule Untangle do
         require Logger
 
         opts = unquote(opts)
+        limit = Untangle.log_truncate_limit()
         # stacktrace = unquote(opts[:stacktrace] || Untangle.get_current_stacktrace()) 
 
         {formatted, result} =
@@ -114,8 +116,8 @@ defmodule Untangle do
                     # Untangle.format_stacktrace_label(stacktrace, opts[:trace_skip] || 0)
                   end,
                 pretty: true,
-                limit: 10000,
-                printable_limit: 10000
+                limit: limit,
+                printable_limit: limit
               ],
               opts
             )
@@ -138,6 +140,7 @@ defmodule Untangle do
         require Logger
 
         opts = unquote(opts)
+        limit = Untangle.log_truncate_limit()
 
         {formatted, result} =
           Untangle.__prepare_dbg__(
@@ -159,8 +162,8 @@ defmodule Untangle do
                     )
                   end,
                 pretty: true,
-                limit: 10000,
-                printable_limit: 10000
+                limit: limit,
+                printable_limit: limit
               ],
               opts
             )
@@ -203,6 +206,7 @@ defmodule Untangle do
         require Logger
 
         opts = unquote(opts)
+        limit = Untangle.log_truncate_limit()
 
         {formatted, result} =
           Untangle.__prepare_dbg__(
@@ -224,8 +228,8 @@ defmodule Untangle do
                     )
                   end,
                 pretty: true,
-                limit: 10000,
-                printable_limit: 10000
+                limit: limit,
+                printable_limit: limit
               ],
               opts
             )
@@ -260,8 +264,10 @@ defmodule Untangle do
           nil
 
         unquote(opts)[:verbose] ->
+          limit = Untangle.log_truncate_limit()
+
           Logger.debug(
-            "#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, limit: 10000, printable_limit: 10000)}"
+            "#{unquote(pre)} #{unquote(label)}: #{inspect(unquote(thang), pretty: true, limit: limit, printable_limit: limit)}"
           )
 
         is_list(unquote(thang)) ->
@@ -361,6 +367,32 @@ defmodule Untangle do
 
   def to_io? do
     Application.get_env(:untangle, :to_io, false)
+  end
+
+  @cwd_key {__MODULE__, :cwd}
+
+  @doc """
+  The working directory, looked up once per node.
+
+  `Path.relative_to_cwd/1` calls `File.cwd()`, which is a `GenServer.call` to the single global `:file_server_2`. Formatting a stacktrace touches this once per frame, so a node logging errors in a loop serialises every one of those calls through one mailbox. A release's working directory cannot change under it, so the answer is cached.
+  """
+  if Application.compile_env(:untangle, :env) in [:dev, :test] do
+    # under Mix the working directory moves: `Mix.Project.in_project/4` cd's into each dependency
+    # while compiling it, so a cached value could misreport every path for the rest of the session
+    def cwd, do: File.cwd!()
+  else
+    def cwd do
+      case :persistent_term.get(@cwd_key, nil) do
+        nil ->
+          cwd = File.cwd!()
+          # the write forces a global GC scan, which is why it happens exactly once
+          :persistent_term.put(@cwd_key, cwd)
+          cwd
+
+        cwd ->
+          cwd
+      end
+    end
   end
 
   # Pipelines - copied from `Macro.dbg/2`
@@ -665,7 +697,7 @@ defmodule Untangle do
 
   def format_application_location(app \\ nil, module, location) do
     if dep_path = function_exported?(module, :__info__, 1) and module.__info__(:compile)[:source] do
-      format_location(Path.relative_to_cwd(dep_path), location)
+      format_location(Path.relative_to(dep_path, cwd()), location)
     else
       case app || :application.get_application(module) do
         # We cannot use Application here due to bootstrap issues
@@ -803,7 +835,7 @@ defmodule Untangle do
   def warner(msg) when is_binary(msg), do: warner(nil, msg)
   def warner(data) when not is_binary(data), do: warner(data, "Warning")
 
-  if Application.compile_env(:untangle, :env) not in [:dev, :test] do
+  if Application.compile_env(:untangle, :env) in [:dev, :test] do
     def warner(data, msg, opts \\ []) when is_binary(msg) do
       if data,
         do:
@@ -835,11 +867,28 @@ defmodule Untangle do
     else
       Logger.log(level, formatted)
     end
+  rescue
+    e -> log_failed(level, formatted, :error, e)
   catch
-    _e -> log_or_flood(level, inspect(formatted))
+    kind, e -> log_failed(level, formatted, kind, e)
   end
 
   def log_or_flood(level, formatted) do
     log_or_flood(level, inspect(formatted))
+  end
+
+  # Deliberately does not go back through `log_or_flood/2`: as retrying would re-enter the same clause and might recurse until the process died. One attempt on stderr, then give up, logging must never become the reason something breaks
+  defp log_failed(level, formatted, kind, reason) do
+    IO.puts(
+      :stderr,
+      "[#{level}] untangle could not log (#{Exception.format_banner(kind, reason)}): " <>
+        inspect(formatted, limit: 10, printable_limit: 512)
+    )
+
+    :ok
+  rescue
+    _ -> :ok
+  catch
+    _, _ -> :ok
   end
 end
