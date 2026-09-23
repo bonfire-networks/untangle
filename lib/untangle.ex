@@ -177,6 +177,45 @@ defmodule Untangle do
     end
   end
 
+  @doc "Like `warn`, but for logging at notice level, e.g. for warnings meant for developers which a production log level should filter out"
+  defmacro notice(thing, label \\ nil, opts \\ []) do
+    quote do
+      if Untangle.log_enabled?(:notice) do
+        require Logger
+
+        opts = unquote(opts)
+        limit = Untangle.log_truncate_limit()
+
+        {formatted, result} =
+          Untangle.__prepare_dbg__(
+            unquote(label),
+            unquote(thing),
+            Keyword.merge(
+              [
+                stacktrace:
+                  if opts[:print_location] != false do
+                    Untangle.format_stacktrace_sliced(
+                      opts[:stacktrace] || Untangle.get_current_stacktrace(),
+                      opts[:trace_skip] || 0,
+                      opts[:trace_limit] || 5
+                    )
+                  end,
+                pretty: true,
+                limit: limit,
+                printable_limit: limit
+              ],
+              opts
+            )
+          )
+
+        Untangle.log_or_flood(:notice, formatted)
+        result
+      else
+        unquote(thing)
+      end
+    end
+  end
+
   @doc ~S"""
   Similar to `dump`, but for logging at error level, and returns an error tuple:
   - an error tuple with the label, if any
@@ -762,38 +801,23 @@ defmodule Untangle do
   @doc """
   Logs or raises errors based on environment.
 
-  This function handles errors differently depending on the environment:
-  - In test: raises an exception
-  - In dev: prints a warning
-  - In production: logs a warning
+  The `:untangle, :env` config picks the behaviour at compile time:
+  - In test: prints a warning and raises the message as a `RuntimeError`
+  - In dev: prints a warning and returns an error tuple wrapping the data
+  - Otherwise: logs at error level and returns an error tuple, like `error/3`
 
   ## Examples
 
-      # With just a message
-      iex> # When in dev/prod (not test), prints a warning and does not raise
-      iex> # Note: Only testing return value here, not side effects
-      iex> Process.put([:bonfire, :env], :dev)
+  These run with `:env` unset, so they show the last behaviour:
+
       iex> err("error message")
-      # Prints: [warning] error message
-      nil
+      {:error, "error message"}
 
-      # With just data
-      iex> Process.put([:bonfire, :env], :dev)
       iex> err(%{key: "value"})
-      # Prints: [warning] An error occurred: %{key: "value"}
-      %{key: "value"}
+      {:error, "An error occurred"}
 
-      # With both data and message
-      iex> Process.put([:bonfire, :env], :dev)
       iex> err(%{key: "value"}, "Custom error message")
-      # Prints: [warning] Custom error message: %{key: "value"}
-      %{key: "value"}
-
-  In test environment, it raises an exception:
-
-      iex> Process.put([:bonfire, :env], :test)
-      iex> err("test error")
-      ** (RuntimeError) test error
+      {:error, "Custom error message"}
   """
   def err(msg) when is_binary(msg), do: err(nil, msg)
   def err(data) when not is_binary(data), do: err(data, "An error occurred")

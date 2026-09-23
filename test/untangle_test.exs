@@ -22,6 +22,9 @@ defmodule Untangle.Test do
     warn(value())
     warn(value(), "testing warn with label")
 
+    assert :a_value = notice(value())
+    assert :a_value = notice(value(), "testing notice with label")
+
     assert {:error, :a_value} = error(value())
     assert {:error, "testing error with label"} = error(value(), "testing error with label")
     assert {:error, :a_value} = error({:error, value()})
