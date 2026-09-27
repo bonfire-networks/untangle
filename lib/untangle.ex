@@ -690,49 +690,150 @@ defmodule Untangle do
 
   A stacktrace must be given as an argument. If not, the stacktrace
   is retrieved from `Process.info/2`.
+
+  Options, for a caller showing it somewhere other than a log (such as an in-app error page):
+  - `:indent`, put before each frame (default four spaces, the log's layout)
+  - `:link_to_code`, a `fn text, module_name, fun_name -> text end` wrapping each frame's location, e.g. in a link to its source
+  - `:entry_max_length`, a cap on each frame's length
   """
-  @spec format_stacktrace(Exception.stacktrace() | nil) :: String.t()
-  def format_stacktrace(trace \\ nil) do
+  @spec format_stacktrace(Exception.stacktrace() | nil, keyword()) :: String.t()
+  def format_stacktrace(trace \\ nil, opts \\ []) do
     trace =
       if trace do
         trace
       else
-        case Process.info(self(), :current_stacktrace) do
-          {:current_stacktrace, t} -> Enum.drop(t, 3)
-        end
+        Enum.drop(get_current_stacktrace(), 3)
       end
 
+    indent = Keyword.get(opts, :indent, "    ")
+
     case trace do
-      [] -> "\n"
-      _ -> "    " <> Enum.map_join(trace, "\n    ", &format_stacktrace_entry(&1)) <> "\n"
+      [] ->
+        "\n"
+
+      _ ->
+        indent <>
+          Enum.map_join(trace, "\n" <> indent, &format_stacktrace_entry(&1, opts)) <> "\n"
     end
   end
 
   @doc """
-  Receives a stacktrace entry and formats it into a string.
+  Receives a stacktrace entry and formats it into a string, taking the options `format_stacktrace/2` does.
+
+  ## Examples
+
+      iex> Untangle.format_stacktrace_entry({Foo, :bar, 1, [file: ~c"lib/foo.ex", line: 42]})
+      "Foo.bar/1 @ lib/foo.ex:42"
   """
-  @spec format_stacktrace_entry(Exception.stacktrace_entry()) :: String.t()
-  def format_stacktrace_entry(entry)
+  @spec format_stacktrace_entry(Exception.stacktrace_entry(), keyword()) :: String.t()
+  def format_stacktrace_entry(entry, opts \\ [])
 
   # From Macro.Env.stacktrace and :elixir_compiler_*
-  def format_stacktrace_entry({module, mod, arity, location})
+  def format_stacktrace_entry({module, mod, arity, location}, _opts)
       when mod in [:__MODULE__, :__FILE__] and arity in [0, 1] do
     Exception.format_stacktrace_entry({module, mod, arity, location})
   end
 
-  def format_stacktrace_entry({app, module, fun, arity, location}) do
-    Exception.format_mfa(module, fun, arity) <>
-      " @ " <> format_application_location(app, module, location)
+  def format_stacktrace_entry({app, module, fun, arity, location}, opts) do
+    (format_mfa(module, fun, arity) <>
+       " @ " <>
+       maybe_link_to_code(format_application_location(app, module, location), module, fun, opts))
+    |> maybe_cap_entry(opts)
   end
 
-  def format_stacktrace_entry({module, fun, arity, location}) do
-    Exception.format_mfa(module, fun, arity) <>
-      " @ " <> format_application_location(module, location)
+  def format_stacktrace_entry({module, fun, arity, location}, opts) do
+    (format_mfa(module, fun, arity) <>
+       " @ " <>
+       maybe_link_to_code(format_application_location(module, location), module, fun, opts))
+    |> maybe_cap_entry(opts)
   end
 
-  def format_stacktrace_entry(other) do
-    format_stacktrace_entry(other)
+  # an anonymous function called from an erlang frame, with no module
+  def format_stacktrace_entry({fun, arity, location}, opts) do
+    (Exception.format_fa(fun, arity) <> " @ " <> format_location(location))
+    |> maybe_cap_entry(opts)
   end
+
+  def format_stacktrace_entry(other, _opts) do
+    inspect(other)
+  end
+
+  defp maybe_link_to_code(text, module, fun, opts) do
+    case opts[:link_to_code] do
+      link when is_function(link, 3) ->
+        {mod, fun} = mf_names(module, fun)
+        link.(text, mod, fun)
+
+      _ ->
+        text
+    end
+  end
+
+  defp maybe_cap_entry(entry, opts) do
+    case opts[:entry_max_length] do
+      max when is_integer(max) -> String.slice(entry, 0, max)
+      _ -> entry
+    end
+  end
+
+  @doc """
+  Formats a module, function and arity as shown in stacktraces. The arity may also be the list of arguments a call was made with, as in the frame that raised.
+
+  An anonymous function reads as "anonymous fn/arity in Module.fun/arity", rather than the compiler's `-fun/arity-fun-count-`.
+
+  Arguments are inspected within the log's `:truncate` budget and sliced to a quarter of it. The frame that raised carries its arguments, and one of them (a whole LiveView socket) could otherwise fill the budget by itself and cut off every frame after it. The exception's banner keeps up to half the budget, and the frames after this one need the rest.
+
+  ## Examples
+
+      iex> Untangle.format_mfa(Foo, :bar, 1)
+      "Foo.bar/1"
+
+      iex> Untangle.format_mfa(Foo, :bar, [])
+      "Foo.bar()"
+
+      iex> Untangle.format_mfa(Foo, :bar, [1, :two])
+      "Foo.bar(1, :two)"
+  """
+  def format_mfa(module, fun, arity_or_args) when is_atom(module) and is_atom(fun) do
+    mod = Macro.inspect_atom(:literal, module)
+
+    case Code.Identifier.extract_anonymous_fun_parent(fun) do
+      {outer_name, outer_arity} ->
+        "anonymous fn#{format_arity(arity_or_args)} in " <>
+          "#{mod}.#{Macro.inspect_atom(:remote_call, outer_name)}/#{outer_arity}"
+
+      :error ->
+        "#{mod}.#{Macro.inspect_atom(:remote_call, fun)}#{format_arity(arity_or_args)}"
+    end
+  end
+
+  def format_mfa(module, fun, arity_or_args), do: Exception.format_mfa(module, fun, arity_or_args)
+
+  # the names a link to a frame's code is built from: an anonymous function's is the function it is in
+  defp mf_names(module, fun) do
+    mod = Macro.inspect_atom(:literal, module)
+
+    case Code.Identifier.extract_anonymous_fun_parent(fun) do
+      {outer_name, _outer_arity} -> {mod, Macro.inspect_atom(:remote_call, outer_name)}
+      :error -> {mod, Macro.inspect_atom(:remote_call, fun)}
+    end
+  end
+
+  defp format_arity(args) when is_list(args) do
+    limit = log_truncate_limit()
+
+    formatted_args =
+      args
+      |> Enum.map_join(", ", &inspect(&1, limit: limit, printable_limit: limit))
+      |> slice_to_log_limit(
+        min: 0,
+        reserved: if(is_integer(limit), do: limit - div(limit, 4), else: 0)
+      )
+
+    "(#{formatted_args})"
+  end
+
+  defp format_arity(arity) when is_integer(arity), do: "/#{arity}"
 
   def format_application_location(app \\ nil, module, location) do
     if dep_path = function_exported?(module, :__info__, 1) and module.__info__(:compile)[:source] do

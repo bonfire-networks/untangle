@@ -137,5 +137,21 @@ defmodule Untangle.Test do
       big = String.duplicate("x", 5000)
       assert slice_to_log_limit(big) == big
     end
+
+    # the frame that raised carries its call's arguments, and one of them (a LiveView socket) used to be inspected in full, filling the budget and cutting off every frame after it
+    test "a frame called with a huge argument leaves room for the frames after it" do
+      huge = %{data: String.duplicate("x", 5000)}
+
+      trace = [
+        {Foo, :bar, [huge], [file: ~c"lib/foo.ex", line: 1]}
+        | for(n <- 1..5, do: {Foo, :"baz#{n}", 1, [file: ~c"lib/foo.ex", line: n]})
+      ]
+
+      formatted = format_stacktrace(trace)
+
+      assert String.length(formatted) <= 1000
+      assert formatted =~ "Foo.bar(%{data: \"xxx"
+      assert formatted =~ "Foo.baz5/1 @ lib/foo.ex:5"
+    end
   end
 end
